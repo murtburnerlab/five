@@ -37,7 +37,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 80px}.view{width:min(1120px
 <div class="eyebrow">A people-powered artist discovery platform</div>
 <div class="home-title">HOW GOOD<br>IS YOUR EYE?</div>
 <div class="home-sub">Five artists. One choice. Make choices. Watch what happens to them. Build a record of your eye.</div>
-<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button><button class="secondary" onclick="calls()">YOUR CALLS</button><button class="secondary" onclick="daily()">DAILY FIVE</button></div>
+<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button><button class="secondary" onclick="viewCalls()">YOUR CALLS</button><button class="secondary" onclick="daily()">DAILY FIVE</button></div>
 </div>
 <div class="home-panel">
 <div class="panel-row"><div class="panel-label">Your calls</div><div class="panel-value" id="homeCalls">0</div></div>
@@ -57,7 +57,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 80px}.view{width:min(1120px
 <div class="result-kicker">CALL RECORDED · <span id="resultCallNo">#001</span></div>
 <div class="result-name" id="chosen">Murt Burner</div><div class="result-meta" id="chosenMeta">Ukraine</div>
 <div class="call-box"><div class="call-line"><span>STATUS</span><strong id="resultStatus">DEVELOPING</strong></div><div class="call-line"><span>YOUR CALL</span><strong id="resultRank">#—</strong></div><div class="call-line"><span>NEXT CHECK</span><strong id="nextCheck">Make another call</strong></div></div>
-<div class="result-actions"><button class="primary" onclick="nextRound()">NEXT FIVE</button><button class="secondary" onclick="calls()">SEE MY CALLS</button></div>
+<div class="result-actions"><button class="primary" onclick="nextRound()">NEXT FIVE</button><button class="secondary" onclick="viewCalls()">SEE MY CALLS</button></div>
 </div></section>
 
 <section id="calls" class="view hidden">
@@ -109,49 +109,49 @@ const artists=[
 {name:'Eva Stern',country:'Germany',instagram:'#',tags:['FIGURATIVE','ABSTRACT'],base:72},
 {name:'Jonas Berg',country:'Sweden',instagram:'#',tags:['SCULPTURAL','INSTALLATION'],base:64}
 ];
-let calls=JSON.parse(localStorage.getItem('fiveCallsV4')||localStorage.getItem('fiveCallsV3')||'[]'),current=[],profileIndex=-1;
+let callHistory=JSON.parse(localStorage.getItem('fiveCallsV4')||localStorage.getItem('fiveCallsV3')||'[]'),current=[],profileIndex=-1;
 let dailyCall=JSON.parse(localStorage.getItem('fiveDailyV4')||'null');
 
 const $=id=>document.getElementById(id);
 function update(){
- $('counter').textContent=calls.length+' CALL'+(calls.length===1?'':'S');
- $('homeCalls').textContent=calls.length;
- $('homeActive').textContent=calls.filter((c,i)=>callState(c,i).state==='DEVELOPING').length;
- let n=calls.length<10?10-calls.length:calls.length<25?25-calls.length:calls.length<50?50-calls.length:100-calls.length;
- $('homeUnlock').textContent=calls.length>=100?'EYE REPORT READY':n+' more calls → '+(calls.length<10?'YOUR EYE':calls.length<25?'YOUR FIVE':calls.length<50?'EYE REPORT':'CURATOR');
- $('eyeCount').textContent=calls.length+' CALL'+(calls.length===1?'':'S');
+ $('counter').textContent=callHistory.length+' CALL'+(callHistory.length===1?'':'S');
+ $('homeCalls').textContent=callHistory.length;
+ $('homeActive').textContent=callHistory.filter((c,i)=>callState(c,i).state==='DEVELOPING').length;
+ let n=callHistory.length<10?10-callHistory.length:callHistory.length<25?25-callHistory.length:callHistory.length<50?50-callHistory.length:100-callHistory.length;
+ $('homeUnlock').textContent=callHistory.length>=100?'EYE REPORT READY':n+' more calls → '+(callHistory.length<10?'YOUR EYE':callHistory.length<25?'YOUR FIVE':callHistory.length<50?'EYE REPORT':'CURATOR');
+ $('eyeCount').textContent=callHistory.length+' CALL'+(callHistory.length===1?'':'S');
  if($('dailyStatus')) $('dailyStatus').textContent=dailyCall?'Completed':'Ready';
 }
 
 function hideAll(){['home','play','result','calls','eye','daily','rankings','submit'].forEach(id=>$(id).classList.add('hidden'));closeProfile()}
 function home(){hideAll();$('home').classList.remove('hidden');update()}
 function play(){hideAll();$('play').classList.remove('hidden');newRound()}
-function calls(){hideAll();$('calls').classList.remove('hidden');renderCalls()}
+function viewCalls(){hideAll();$('calls').classList.remove('hidden');renderCalls()}
 function eye(){hideAll();$('eye').classList.remove('hidden');renderEye()}
 function rankings(){hideAll();$('rankings').classList.remove('hidden');renderRankings()}
 function submitArtist(){hideAll();$('submit').classList.remove('hidden')}
 function daily(){hideAll();$('daily').classList.remove('hidden');renderDaily()}
 function todayKey(){return new Date().toISOString().slice(0,10)}
-function startDaily(){if(dailyCall)return;let pool=[...artists].sort((a,i)=>((a.base*17+i*13+new Date().getDate())%97)).slice(0,5);let a=pool[0];dailyCall={date:todayKey(),artist:a.name,country:a.country,base:a.base,round:calls.length};localStorage.setItem('fiveDailyV4',JSON.stringify(dailyCall));renderDaily()}
-function renderDaily(){if(!dailyCall || dailyCall.date!==todayKey()){dailyCall=null;localStorage.removeItem('fiveDailyV4');$('dailyIntro').classList.remove('hidden');$('dailyResult').classList.add('hidden');$('dailyButton').textContent="MAKE TODAY'S CALL";return} $('dailyIntro').classList.add('hidden');$('dailyResult').classList.remove('hidden');let progress=Math.max(0,calls.length-dailyCall.round);let move=Math.min(38,progress*4);let now=Math.max(1,dailyCall.base-move);$('dailyResult').innerHTML=`<div class="eyebrow">YOUR DAILY CALL · ${dailyCall.date}</div><h3>${dailyCall.artist}</h3><div class="small">You called this artist at #${dailyCall.base}. After ${progress} new calls, the simulated position is #${now}.</div><div style="margin-top:22px;font-size:34px;font-weight:800;letter-spacing:-.06em">${move>0?'+'+move+' positions':'DEVELOPING'}</div><div class="small" style="margin-top:8px">${move>20?'YOU SAW IT EARLY':'The call is still developing.'}</div>`;$('dailyLabel').textContent='COMPLETED'}
-function newRound(){current=[...artists].sort(()=>Math.random()-.5).slice(0,5);$('roundLabel').textContent='ROUND '+String(calls.length+1).padStart(2,'0');$('grid').innerHTML=current.map((a,i)=>`<article class="card"><div class="number">0${i+1}</div><div class="name">${a.name}</div><div class="country">${a.country}</div><div class="tags">${a.tags.map(t=>`<span class="tagpill">${t}</span>`).join('')}</div><div class="card-actions"><button class="profile" onclick="openProfile(${i})">PROFILE</button><button class="choose" onclick="choose(${i})">CHOOSE</button></div></article>`).join('')}
+function startDaily(){if(dailyCall)return;let pool=[...artists].sort((a,i)=>((a.base*17+i*13+new Date().getDate())%97)).slice(0,5);let a=pool[0];dailyCall={date:todayKey(),artist:a.name,country:a.country,base:a.base,round:callHistory.length};localStorage.setItem('fiveDailyV4',JSON.stringify(dailyCall));renderDaily()}
+function renderDaily(){if(!dailyCall || dailyCall.date!==todayKey()){dailyCall=null;localStorage.removeItem('fiveDailyV4');$('dailyIntro').classList.remove('hidden');$('dailyResult').classList.add('hidden');$('dailyButton').textContent="MAKE TODAY'S CALL";return} $('dailyIntro').classList.add('hidden');$('dailyResult').classList.remove('hidden');let progress=Math.max(0,callHistory.length-dailyCall.round);let move=Math.min(38,progress*4);let now=Math.max(1,dailyCall.base-move);$('dailyResult').innerHTML=`<div class="eyebrow">YOUR DAILY CALL · ${dailyCall.date}</div><h3>${dailyCall.artist}</h3><div class="small">You called this artist at #${dailyCall.base}. After ${progress} new calls, the simulated position is #${now}.</div><div style="margin-top:22px;font-size:34px;font-weight:800;letter-spacing:-.06em">${move>0?'+'+move+' positions':'DEVELOPING'}</div><div class="small" style="margin-top:8px">${move>20?'YOU SAW IT EARLY':'The call is still developing.'}</div>`;$('dailyLabel').textContent='COMPLETED'}
+function newRound(){current=[...artists].sort(()=>Math.random()-.5).slice(0,5);$('roundLabel').textContent='ROUND '+String(callHistory.length+1).padStart(2,'0');$('grid').innerHTML=current.map((a,i)=>`<article class="card"><div class="number">0${i+1}</div><div class="name">${a.name}</div><div class="country">${a.country}</div><div class="tags">${a.tags.map(t=>`<span class="tagpill">${t}</span>`).join('')}</div><div class="card-actions"><button class="profile" onclick="openProfile(${i})">PROFILE</button><button class="choose" onclick="choose(${i})">CHOOSE</button></div></article>`).join('')}
 function openProfile(i){profileIndex=i;const a=current[i];$('profileName').textContent=a.name;$('profileCountry').textContent=a.country;$('profileCopy').textContent='Look at the artist first. Then decide if you want to make the call.';$('profileInstagram').href=a.instagram;$('modal').classList.remove('hidden')}
 function closeProfile(){$('modal').classList.add('hidden');profileIndex=-1}
 function chooseProfile(){if(profileIndex>=0){let i=profileIndex;closeProfile();choose(i)}}
 function choose(i){
  const a=current[i];
- const item={name:a.name,country:a.country,tags:a.tags,base:a.base,at:Date.now(),round:calls.length+1};
- calls.push(item);
- localStorage.setItem('fiveCallsV4',JSON.stringify(calls));
- $('chosen').textContent=a.name;$('chosenMeta').textContent=a.country;$('resultCallNo').textContent='#'+String(calls.length).padStart(3,'0');
- let r=callState(item,calls.length-1);
+ const item={name:a.name,country:a.country,tags:a.tags,base:a.base,at:Date.now(),round:callHistory.length+1};
+ callHistory.push(item);
+ localStorage.setItem('fiveCallsV4',JSON.stringify(callHistory));
+ $('chosen').textContent=a.name;$('chosenMeta').textContent=a.country;$('resultCallNo').textContent='#'+String(callHistory.length).padStart(3,'0');
+ let r=callState(item,callHistory.length-1);
  $('resultStatus').textContent=r.state; $('resultRank').textContent='#'+r.now;
  $('nextCheck').textContent=r.state==='DEVELOPING'?'Make another call':'Check YOUR CALLS';
  hideAll();$('result').classList.remove('hidden');update();
 }
 
 function callState(item,index){
- let age=Math.max(0,calls.length-item.round);
+ let age=Math.max(0,callHistory.length-item.round);
  let seed=(item.name.length*11+item.base*3+index*17)%41-10;
  let move=age===0?0:Math.round(age*4+seed);
  let now=Math.max(1,item.base-move);
@@ -160,13 +160,13 @@ function callState(item,index){
 }
 
 function renderCalls(){
- if(!calls.length){$('callsList').innerHTML='<div class="report"><h3>No calls yet.</h3><div class="small">Your choices will appear here and develop over time.</div></div>';return}
- let active=calls.filter((c,i)=>callState(c,i).state==='DEVELOPING').length;$('activeLabel').textContent=active+' DEVELOPING';
- $('callsList').innerHTML=calls.slice().reverse().map((c,rev)=>{let idx=calls.length-1-rev,r=callState(c,idx);let cls=r.change>0?'up':r.change<0?'down':'developing';let txt=r.state==='DEVELOPING'?'DEVELOPING':r.change>0?'+'+r.change+' positions':r.change+' positions';return `<div class="call-card"><div class="rank-old">#${r.old}</div><div><div class="call-name">${c.name}</div><div class="call-country">${c.country} · CALL #${idx+1}</div></div><div class="rank-now">#${r.now}</div><div class="movement ${cls}">${txt}</div><div class="status small">${r.state}</div></div>`}).join('')}
+ if(!callHistory.length){$('callsList').innerHTML='<div class="report"><h3>No calls yet.</h3><div class="small">Your choices will appear here and develop over time.</div></div>';return}
+ let active=callHistory.filter((c,i)=>callState(c,i).state==='DEVELOPING').length;$('activeLabel').textContent=active+' DEVELOPING';
+ $('callsList').innerHTML=callHistory.slice().reverse().map((c,rev)=>{let idx=callHistory.length-1-rev,r=callState(c,idx);let cls=r.change>0?'up':r.change<0?'down':'developing';let txt=r.state==='DEVELOPING'?'DEVELOPING':r.change>0?'+'+r.change+' positions':r.change+' positions';return `<div class="call-card"><div class="rank-old">#${r.old}</div><div><div class="call-name">${c.name}</div><div class="call-country">${c.country} · CALL #${idx+1}</div></div><div class="rank-now">#${r.now}</div><div class="movement ${cls}">${txt}</div><div class="status small">${r.state}</div></div>`}).join('')}
 
-function score(type){if(calls.length<10)return null;let states=calls.map((c,i)=>callState(c,i));if(type==='early')return Math.round(50+100*states.filter(r=>r.state==='EARLY').length/calls.length);if(type==='independent')return Math.min(99,55+(new Set(calls.map(c=>c.name)).size/calls.length)*35);return Math.min(99,50+calls.filter(c=>c.base>50).length/calls.length*45)}
+function score(type){if(callHistory.length<10)return null;let states=callHistory.map((c,i)=>callState(c,i));if(type==='early')return Math.round(50+100*states.filter(r=>r.state==='EARLY').length/callHistory.length);if(type==='independent')return Math.min(99,55+(new Set(callHistory.map(c=>c.name)).size/callHistory.length)*35);return Math.min(99,50+callHistory.filter(c=>c.base>50).length/callHistory.length*45)}
 
-function renderEye(){let early=score('early'),ind=score('independent'),expl=score('explorer');$('eyeHeadline').textContent=calls.length<10?'Your eye is starting to form.':calls.length<25?'Your first signal is visible.':calls.length<50?'Your pattern is getting clearer.':calls.length<100?'Your eye has a measurable history.':'You have a mature FIVE record.';$('eyeCopy').textContent=calls.length<10?'Make 10 calls to unlock your first measurable signal.':calls.length<25?'Keep going to unlock YOUR FIVE at 25 calls.':calls.length<50?'Your choices now have enough history to compare patterns.':calls.length<100?'At 100 calls you can unlock your full EYE REPORT.':'Your record is now large enough for deeper comparison.';const metrics=[['EARLY',early,'You tend to notice artists before they move.'],['INDEPENDENT',ind,'How often your choices differ from the crowd.'],['EXPLORER',expl,'How often you choose beyond established names.']];$('metrics').innerHTML=metrics.map(m=>`<div class="metric"><div class="metric-name">${m[0]}</div><div class="metric-num">${m[1]??'—'}</div><div class="metric-copy">${m[2]}</div></div>`).join('');let counts={};calls.forEach(c=>counts[c.name]=(counts[c.name]||0)+1);let top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);$('fiveList').innerHTML=top.length?top.map((x,i)=>`<div class="five-item"><strong>${String(i+1).padStart(2,'0')} ${x[0]}</strong><span class="small">${x[1]} call${x[1]===1?'':'s'}</span></div>`).join(''):'<div class="small" style="padding:15px 0">Make your first call.</div>';if(calls.length){let best=calls.map((c,i)=>({c,...callState(c,i)})).sort((a,b)=>b.change-a.change)[0];$('bestCall').textContent=best.c.name;$('bestCallCopy').textContent='Your strongest simulated movement: #'+best.old+' → #'+best.now+' (+'+best.change+').'}else{$('bestCall').textContent='—';$('bestCallCopy').textContent='Make more calls to build your history.'}}
+function renderEye(){let early=score('early'),ind=score('independent'),expl=score('explorer');$('eyeHeadline').textContent=callHistory.length<10?'Your eye is starting to form.':callHistory.length<25?'Your first signal is visible.':callHistory.length<50?'Your pattern is getting clearer.':callHistory.length<100?'Your eye has a measurable history.':'You have a mature FIVE record.';$('eyeCopy').textContent=callHistory.length<10?'Make 10 calls to unlock your first measurable signal.':callHistory.length<25?'Keep going to unlock YOUR FIVE at 25 calls.':callHistory.length<50?'Your choices now have enough history to compare patterns.':callHistory.length<100?'At 100 calls you can unlock your full EYE REPORT.':'Your record is now large enough for deeper comparison.';const metrics=[['EARLY',early,'You tend to notice artists before they move.'],['INDEPENDENT',ind,'How often your choices differ from the crowd.'],['EXPLORER',expl,'How often you choose beyond established names.']];$('metrics').innerHTML=metrics.map(m=>`<div class="metric"><div class="metric-name">${m[0]}</div><div class="metric-num">${m[1]??'—'}</div><div class="metric-copy">${m[2]}</div></div>`).join('');let counts={};callHistory.forEach(c=>counts[c.name]=(counts[c.name]||0)+1);let top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);$('fiveList').innerHTML=top.length?top.map((x,i)=>`<div class="five-item"><strong>${String(i+1).padStart(2,'0')} ${x[0]}</strong><span class="small">${x[1]} call${x[1]===1?'':'s'}</span></div>`).join(''):'<div class="small" style="padding:15px 0">Make your first call.</div>';if(callHistory.length){let best=callHistory.map((c,i)=>({c,...callState(c,i)})).sort((a,b)=>b.change-a.change)[0];$('bestCall').textContent=best.c.name;$('bestCallCopy').textContent='Your strongest simulated movement: #'+best.old+' → #'+best.now+' (+'+best.change+').'}else{$('bestCall').textContent='—';$('bestCallCopy').textContent='Make more calls to build your history.'}}
 function renderRankings(){let ranked=[...artists].sort((a,b)=>a.base-b.base);$('rankList').innerHTML=ranked.map((a,i)=>`<div class="rank-row"><div class="rank-num">#${i+1}</div><div><div class="rank-artist">${a.name}</div><div class="rank-country">${a.country}</div></div><div class="rank-choice">${Math.max(14,Math.round(86-i*5))}%</div></div>`).join('')}
 function shareEye(){let text='My FIVE Eye — '+(score('early')||'building')+' EARLY · '+(score('independent')||'building')+' INDEPENDENT · '+(score('explorer')||'building')+' EXPLORER';if(navigator.share)navigator.share({title:'My FIVE Eye',text}).catch(()=>{});else alert(text)}
 function sendSubmission(){alert('Submission received in prototype mode. Production will send it to FIVE review.');}
