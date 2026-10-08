@@ -1,18 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./supabase-config.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f1efe9">
-<title>FIVE — Your eye, over time</title>
+<title>FIVE — Discover. Choose. Rank.</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
 <style>
 :root{--bg:#f1efe9;--paper:#f7f6f2;--fg:#111;--muted:#77736c;--line:#d6d2ca;--soft:#e7e4dd;--green:#1f5d43;--red:#7a3535}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}button,a{font:inherit}button{cursor:pointer}a{color:inherit}
-header{height:76px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(241,239,233,.96);backdrop-filter:blur(8px);z-index:20}.brand{font-weight:800;letter-spacing:-.07em;font-size:24px;border:0;background:none;padding:0}.topnav{display:flex;gap:22px;align-items:center;font-size:10px;letter-spacing:.13em;text-transform:uppercase}.topnav button{border:0;background:none;padding:0}.counter{color:var(--muted)}
-main{min-height:calc(100vh - 76px);padding:42px 24px 80px}.view{width:min(1120px,100%);margin:0 auto}.hidden{display:none!important}.eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-.home{min-height:calc(100vh - 200px);display:grid;grid-template-columns:1.2fr .8fr;gap:50px;align-items:center}.home-title{font-size:clamp(62px,11vw,150px);font-weight:800;letter-spacing:-.09em;line-height:.76;margin:22px 0 34px}.home-sub{font-size:20px;line-height:1.25;max-width:430px}.primary{border:0;background:#111;color:#fff;padding:16px 24px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.primary:hover{background:#333}.secondary{border:1px solid #111;background:transparent;color:#111;padding:15px 22px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.home-actions{display:flex;gap:9px;margin-top:32px;flex-wrap:wrap}.home-panel{border-top:1px solid #111}.panel-row{padding:17px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:20px}.panel-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase}.panel-value{font-size:13px;text-align:right}.small{font-size:11px;color:var(--muted);line-height:1.4}
+header{height:76px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(241,239,233,.96);backdrop-filter:blur(8px);z-index:20}.brand{font-weight:800;letter-spacing:-.07em;font-size:24px;border:0;background:none;padding:0;flex-shrink:0}.topnav{display:flex;gap:22px;align-items:center;font-size:10px;letter-spacing:.13em;text-transform:uppercase}.topnav button{border:0;background:none;padding:0;white-space:nowrap}.counter{color:var(--muted);font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px,100%);margin:0 auto}.hidden{display:none!important}.eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.home{min-height:calc(100vh - 200px);display:grid;grid-template-columns:1.2fr .8fr;gap:50px;align-items:center}.home-title{font-size:clamp(62px,11vw,150px);font-weight:800;letter-spacing:-.09em;line-height:.76;margin:22px 0 34px}.home-sub{font-size:20px;line-height:1.25;max-width:430px}.primary{border:0;background:#111;color:#fff;padding:16px 24px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.primary:hover{background:#333}.secondary{border:1px solid #111;background:transparent;color:#111;padding:15px 22px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.home-actions{display:flex;gap:9px;margin-top:32px;flex-wrap:wrap}.panel-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase}.small{font-size:11px;color:var(--muted);line-height:1.4}
+.home-v2{grid-template-columns:1.05fr .95fr;gap:54px}.home-v2 .home-title{font-size:clamp(56px,8.4vw,112px);line-height:.82;margin:24px 0 28px}.home-v2 .home-sub{font-size:19px;max-width:340px}.home-v2 .home-actions{margin-top:28px}.home-data{align-self:center;border-top:1px solid #111}.global-stats{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px 0 30px;border-bottom:1px solid var(--line)}.stat-value{font-size:clamp(40px,5vw,68px);font-weight:800;letter-spacing:-.07em;line-height:1.05;margin-top:10px}.home-ranking-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 0 12px;font-size:10px;letter-spacing:.13em;font-weight:700}.text-button{border:0;background:transparent;padding:5px 0;font-size:9px;letter-spacing:.08em;text-decoration:underline;text-underline-offset:4px}.home-top-five{border-top:1px solid var(--line)}.home-rank-row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}.home-rank-num{font-size:12px;color:var(--muted)}.home-rank-name{font-size:15px;font-weight:600;line-height:1.1}.home-rank-country{font-size:10px;color:var(--muted);margin-top:4px}.home-rank-choices{font-size:10px;text-align:right;white-space:nowrap;color:var(--muted)}
 .section-head{display:flex;justify-content:space-between;align-items:end;border-bottom:1px solid #111;padding-bottom:16px;margin-bottom:18px}.section-title{font-size:clamp(40px,7vw,78px);font-weight:800;letter-spacing:-.07em;line-height:.85;margin:12px 0 0}.play-head{margin-bottom:24px}.round{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}.card{min-height:350px;border:1px solid var(--line);background:var(--paper);padding:15px;display:flex;flex-direction:column;justify-content:flex-end;transition:.15s}.card:hover{background:#fff;transform:translateY(-3px)}.number{font-size:10px;color:var(--muted);margin-bottom:auto}.name{font-size:22px;line-height:1.02;letter-spacing:-.03em}.country{font-size:11px;color:var(--muted);margin-top:7px}.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}.tagpill{font-size:8px;letter-spacing:.08em;border:1px solid var(--line);padding:5px 6px;color:#555}.card-actions{display:flex;gap:7px;margin-top:14px}.card-actions button{font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:9px 10px}.choose{background:#111;color:#fff;border:1px solid #111;flex:1}.profile{background:transparent;border:1px solid #111}
 .result-wrap{max-width:720px;margin:0 auto;text-align:center;padding:8vh 0}.result-kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}.result-name{font-size:clamp(50px,10vw,110px);font-weight:800;letter-spacing:-.08em;line-height:.82;margin:25px 0 15px}.result-meta{color:var(--muted);font-size:13px}.call-box{border-top:1px solid #111;border-bottom:1px solid #111;margin:42px auto 28px;padding:18px 0;text-align:left}.call-line{display:flex;justify-content:space-between;gap:20px;font-size:12px;padding:7px 0}.result-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
@@ -21,32 +22,34 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 80px}.view{width:min(1120px
 .rank-list{border-top:1px solid #111}.rank-row{display:grid;grid-template-columns:65px 1fr 120px 100px;gap:15px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}.rank-num{font-size:22px;font-weight:700}.rank-artist{font-size:17px}.rank-country{font-size:11px;color:var(--muted);margin-top:3px}.rank-choice{text-align:right;font-size:12px}.demo-note{font-size:10px;color:var(--muted);margin-top:18px;line-height:1.45}
 .submit,.auth{max-width:650px}.form{border-top:1px solid #111;margin-top:28px}.field{padding:15px 0;border-bottom:1px solid var(--line)}.field label{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}.field input{width:100%;border:0;border-bottom:1px solid #aaa;background:transparent;padding:8px 0;font-size:17px;outline:0;color:var(--fg)}.submit-note{font-size:11px;color:var(--muted);line-height:1.45;margin:18px 0}.message{border-top:1px solid #111;border-bottom:1px solid var(--line);padding:15px 0;margin:18px 0;font-size:12px;line-height:1.45}.message.error{color:var(--red)}.message.success{color:var(--green)}.auth-actions,.auth-switch{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.auth-switch button{flex:1}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modalbox{width:min(480px,100%);background:var(--bg);padding:26px}.modaltop{display:flex;justify-content:space-between}.close{border:0;background:none;font-size:25px;padding:0}.modal h2{font-size:44px;letter-spacing:-.06em;line-height:.9;margin:45px 0 7px}.modal p{font-size:12px;color:#555;line-height:1.45}.modal a{display:inline-block;margin:15px 0 20px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
-@media(max-width:850px){.home{grid-template-columns:1fr;gap:45px}.grid{grid-template-columns:1fr 1fr}.card{min-height:280px}.call-card{grid-template-columns:55px 1fr 100px}.call-card .status{grid-column:2/4}.eye-grid{grid-template-columns:1fr}.eye-two{grid-template-columns:1fr}.rank-row{grid-template-columns:50px 1fr 90px}.rank-row .rank-choice{grid-column:3}}
-@media(max-width:520px){header{padding:0 16px}.topnav{gap:12px}.topnav .hide-mobile{display:none}main{padding:28px 15px 60px}.grid{grid-template-columns:1fr}.card{min-height:210px}.home-title{font-size:76px}.section-title{font-size:54px}.call-card{grid-template-columns:48px 1fr}.call-card .movement{grid-column:2;text-align:left}.call-card .status{grid-column:2}.rank-row{grid-template-columns:40px 1fr}.rank-row .rank-choice{grid-column:2;text-align:left}.rank-row .rank-choice:before{content:'CHOICES  '}}
+.site-footer{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:22px 0 30px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px}.site-footer button,.site-footer a{border:0;background:none;padding:0;color:#111;font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+@media(max-width:850px){.home{grid-template-columns:1fr;gap:45px}.home-v2{grid-template-columns:1fr;gap:42px}.home-v2 .home-title{font-size:clamp(64px,12vw,100px)}.home-data{width:100%}.grid{grid-template-columns:1fr 1fr}.card{min-height:280px}.call-card{grid-template-columns:55px 1fr 100px}.call-card .status{grid-column:2/4}.eye-grid{grid-template-columns:1fr}.eye-two{grid-template-columns:1fr}.rank-row{grid-template-columns:50px 1fr 90px}.rank-row .rank-choice{grid-column:3}}
+@media(max-width:520px){header{height:68px;padding:0 14px;gap:12px}.topnav{gap:13px;font-size:10px}.counter{display:none}main{padding:28px 15px 48px}.grid{grid-template-columns:1fr}.card{min-height:210px}.home-title{font-size:76px}.home-v2{gap:36px;min-height:auto}.home-v2 .home-title{font-size:clamp(58px,13.2vw,76px);line-height:.84;margin:22px 0 25px}.home-v2 .home-sub{font-size:17px}.stat-value{font-size:48px}.home-ranking-head{align-items:flex-start}.home-rank-name{font-size:14px}.site-footer{width:calc(100% - 30px);padding:20px 0 28px}.section-title{font-size:54px}.call-card{grid-template-columns:48px 1fr}.call-card .movement{grid-column:2;text-align:left}.call-card .status{grid-column:2}.rank-row{grid-template-columns:40px 1fr}.rank-row .rank-choice{grid-column:2;text-align:left}.rank-row .rank-choice:before{content:'CHOICES  '}}
 </style>
 </head>
 <body>
 <header>
 <button class="brand" onclick="home()">FIVE</button>
 <nav class="topnav">
-<button onclick="play()">PLAY</button><button onclick="eye()">YOUR EYE</button><button class="hide-mobile" onclick="daily()">DAILY</button><button class="hide-mobile" onclick="rankings()">RANKINGS</button><button class="hide-mobile" onclick="submitArtist()">SUBMIT</button><button onclick="authView()" id="authNav">SIGN IN</button>
+<button onclick="play()">PLAY</button><button onclick="eye()">YOUR EYE</button><button onclick="rankings()">RANKINGS</button><button onclick="authView()" id="authNav">SIGN IN</button>
 </nav>
 <div class="counter" id="counter">SIGNED OUT</div>
 </header>
 <main>
-<section id="home" class="view home">
-<div>
-<div class="eyebrow">A people-powered artist discovery platform</div>
-<div class="home-title">HOW GOOD<br>IS YOUR EYE?</div>
-<div class="home-sub">Five artists. One choice. Make real calls, backed by the FIVE database.</div>
-<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button><button class="secondary" onclick="viewCalls()">YOUR CALLS</button><button class="secondary" onclick="daily()">DAILY FIVE</button></div>
+<section id="home" class="view home home-v2">
+<div class="hero-copy">
+<div class="eyebrow">GLOBAL ARTIST DISCOVERY</div>
+<div class="home-title">DISCOVER.<br>CHOOSE.<br>RANK.</div>
+<div class="home-sub">A global ranking shaped by real choices.</div>
+<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button></div>
 </div>
-<div class="home-panel">
-<div class="panel-row"><div class="panel-label">Your calls</div><div class="panel-value" id="homeCalls">0</div></div>
-<div class="panel-row"><div class="panel-label">Public rankings</div><div class="panel-value" id="homeActive">Real data</div></div>
-<div class="panel-row"><div class="panel-label">Your eye</div><div class="panel-value" id="homeUnlock">Not enough data yet</div></div>
-<div class="panel-row"><div class="panel-label">Daily Five</div><div class="panel-value" id="dailyStatus">Coming soon</div></div>
-<p class="small" style="margin-top:20px">FIVE records calls through Supabase. Rankings and artist rounds come from the server, so this interface will not invent scores or simulated movement.</p>
+<div class="home-data">
+<div class="global-stats">
+<div class="stat"><div class="panel-label">ARTISTS</div><div class="stat-value" id="globalArtists">—</div></div>
+<div class="stat"><div class="panel-label">CHOICES</div><div class="stat-value" id="globalChoices">—</div></div>
+</div>
+<div class="home-ranking-head"><span>GLOBAL TOP 5</span><button class="text-button" onclick="rankings()">VIEW FULL RANKING</button></div>
+<div id="homeTopFive" class="home-top-five"><div class="small">Loading live ranking…</div></div>
 </div>
 </section>
 
@@ -64,29 +67,25 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 80px}.view{width:min(1120px
 
 <section id="play" class="view hidden">
 <div class="section-head play-head"><div><div class="eyebrow">DISCOVER</div><div class="section-title">MAKE YOUR CALL</div></div><div class="round" id="roundLabel">ROUND 01</div></div>
-<div id="playMessage" class="message hidden"></div>
-<div id="grid" class="grid"></div>
+<div id="playMessage" class="message hidden"></div><div id="grid" class="grid"></div>
 </section>
 
 <section id="result" class="view hidden"><div class="result-wrap">
-<div class="result-kicker">CALL RECORDED</div>
-<div class="result-name" id="chosen">Murt Burner</div><div class="result-meta" id="chosenMeta">Ukraine</div>
+<div class="result-kicker">CALL RECORDED</div><div class="result-name" id="chosen">Murt Burner</div><div class="result-meta" id="chosenMeta">Ukraine</div>
 <div class="call-box"><div class="call-line"><span>STATUS</span><strong id="resultStatus">DEVELOPING</strong></div><div class="call-line"><span>YOUR CALL</span><strong id="resultRank">#—</strong></div><div class="call-line"><span>NEXT CHECK</span><strong id="nextCheck">Make another call</strong></div></div>
 <div class="result-actions"><button class="primary" onclick="nextRound()">NEXT FIVE</button><button class="secondary" onclick="viewCalls()">SEE MY CALLS</button></div>
 </div></section>
 
 <section id="calls" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">YOUR HISTORY</div><div class="section-title">YOUR CALLS</div></div><div class="round" id="activeLabel">0 ACTIVE</div></div>
-<div id="callsMessage" class="message hidden"></div>
-<div id="callsList" class="cards-list"></div>
+<div id="callsMessage" class="message hidden"></div><div id="callsList" class="cards-list"></div>
 <p class="demo-note">Calls shown here come from Supabase when the signed-in account is allowed to read them. No simulated movement is shown.</p>
 </section>
 
 <section id="eye" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">YOUR SIGNAL</div><div class="section-title">YOUR EYE</div></div><div class="round" id="eyeCount">0 CALLS</div></div>
 <div id="eyeIntro" class="report"><div class="eyebrow">BUILDING</div><h3 id="eyeHeadline">Your eye is starting to form.</h3><div class="small" id="eyeCopy">Make 10 calls to unlock your first measurable signal.</div></div>
-<div class="eye-grid" id="metrics"></div>
-<div class="eye-two">
+<div class="eye-grid" id="metrics"></div><div class="eye-two">
 <div class="report"><div class="eyebrow">YOUR FIVE</div><h3>Artists you keep choosing.</h3><div id="fiveList" class="five-list"></div></div>
 <div class="report"><div class="eyebrow">BEST CALL</div><h3 id="bestCall">—</h3><div class="small" id="bestCallCopy">Make more calls to build your history.</div><div class="share"><button class="primary" onclick="shareEye()">SHARE YOUR EYE</button></div></div>
 </div>
@@ -99,18 +98,18 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 80px}.view{width:min(1120px
 
 <section id="rankings" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">PUBLIC RANKING</div><div class="section-title">ARTISTS</div></div><div class="round" id="rankingLabel">REAL DATA</div></div>
-<div id="rankingMessage" class="message hidden"></div>
-<div id="rankList" class="rank-list"></div>
+<div id="rankingMessage" class="message hidden"></div><div id="rankList" class="rank-list"></div>
 </section>
 
 <section id="submit" class="view submit hidden">
 <div class="eyebrow">DATABASE</div><div class="section-title">SUBMIT<br>AN ARTIST</div>
 <p class="submit-note">FIVE reviews submissions before adding an artist to the public database.</p>
 <div id="submitMessage" class="message hidden"></div>
-<div class="form"><div class="field"><label>Artist name</label><input id="artistName" placeholder="Name"></div><div class="field"><label>Country</label><input id="artistCountry" placeholder="Country"></div><div class="field"><label>Instagram URL</label><input id="artistInstagram" type="url" placeholder="https://instagram.com/..." /></div><div class="field"><label>Website URL</label><input id="artistWebsite" type="url" placeholder="https://..." /></div></div>
+<div class="form"><div class="field"><label>Artist name</label><input id="artistName" placeholder="Name"></div><div class="field"><label>Country</label><input id="artistCountry" placeholder="Country"></div><div class="field"><label>Instagram URL</label><input id="artistInstagram" type="url" placeholder="https://instagram.com/..."></div><div class="field"><label>Website URL</label><input id="artistWebsite" type="url" placeholder="https://..."></div></div>
 <div style="margin-top:22px"><button class="primary" id="submitArtistButton" onclick="sendSubmission()">SEND REQUEST</button></div>
 </section>
 </main>
+<footer class="site-footer"><button onclick="submitArtist()">SUBMIT ARTIST</button><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
 
 <div id="modal" class="modal hidden" onclick="closeProfile()"><div class="modalbox" onclick="event.stopPropagation()"><div class="modaltop"><div class="eyebrow">ARTIST PROFILE</div><button class="close" onclick="closeProfile()">×</button></div><h2 id="profileName"></h2><div id="profileCountry" class="small"></div><p id="profileCopy"></p><a id="profileInstagram" href="#" target="_blank" rel="noopener" class="hidden">OPEN INSTAGRAM</a><a id="profileWebsite" href="#" target="_blank" rel="noopener" class="hidden">OPEN WEBSITE</a><br><button class="primary" id="profileChoose" onclick="chooseProfile()">CHOOSE THIS ARTIST</button></div></div>
 <script src="./app.js"></script>
