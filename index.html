@@ -1,115 +1,28 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FIVE — Five artists. One choice.</title>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FIVE — Artist Discovery</title>
 <style>
-:root{--bg:#f2f0eb;--fg:#111;--muted:#777;--line:#d8d5cf;--card:#f7f6f2}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}
-header{padding:28px 32px;display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
-main{min-height:calc(100vh - 76px);display:flex;align-items:center;justify-content:center;padding:40px 24px}
-.view{width:min(1120px,100%)}
-.intro{text-align:center}.logo{font-size:clamp(64px,12vw,150px);font-weight:700;letter-spacing:-.08em;line-height:.8}
-.tag{margin:28px 0 40px;font-size:18px}
-button{font:inherit;border:0;background:#111;color:#fff;padding:16px 28px;cursor:pointer}
-button:hover{background:#333}.hidden{display:none}
-.prompt{text-align:center;margin-bottom:28px;font-size:14px;letter-spacing:.12em;text-transform:uppercase}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-.card{min-height:350px;border:1px solid var(--line);background:var(--card);padding:18px;display:flex;flex-direction:column;justify-content:flex-end;text-align:left;transition:.15s}
-.card:hover{transform:translateY(-4px);background:#fff}
-.number{font-size:11px;color:var(--muted);margin-bottom:auto}.name{font-size:21px;line-height:1.05}
-.country{font-size:12px;color:var(--muted);margin-top:8px}
-.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
-.actions button,.actions a{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;text-decoration:none}
-.profile-btn{background:transparent;color:#111;border:1px solid #111}.choose-btn{background:#111;color:#fff}
-.result{text-align:center}.result h2{font-size:48px;letter-spacing:-.04em;margin:10px 0}.result p{color:var(--muted)}
-.result a{color:#111;text-decoration:underline}.links{margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.secondary{background:transparent;color:#111;border:1px solid #111}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
-.modal.hidden{display:none}.modal-box{width:min(460px,100%);background:var(--bg);padding:28px}
-.modal-top{display:flex;justify-content:space-between;align-items:flex-start}.close{background:transparent;color:#111;padding:0;font-size:24px}
-.modal h2{font-size:36px;letter-spacing:-.04em;margin:30px 0 6px}.modal-country{color:var(--muted);font-size:13px}
-.modal-copy{margin:28px 0;color:#333;line-height:1.45}.modal-instagram{display:inline-block;color:#111;text-decoration:underline;margin-bottom:24px}
-@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.card{min-height:230px}}
-@media(max-width:480px){.grid{grid-template-columns:1fr}.card{min-height:190px}}
-</style>
-</head>
-<body>
-<header><div>FIVE</div><div id="count">0 choices</div></header>
+:root{--bg:#f2f0eb;--fg:#111;--muted:#777;--line:#d5d2cc;--card:#f8f7f3}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,sans-serif}header{height:76px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);position:sticky;top:0;background:#f2f0eb;z-index:5}.brand{font-weight:700;font-size:24px}.nav{display:flex;gap:18px}.nav button{border:0;background:none;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:8px}main{max-width:1150px;margin:auto;padding:55px 22px 100px}.screen{display:none}.screen.active{display:block}.hero{text-align:center;padding:12vh 0}.hero h1{font-size:clamp(80px,17vw,180px);letter-spacing:-.09em;line-height:.75;margin:0}.hero p{font-size:20px;margin:35px}.eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}h2{font-size:44px;letter-spacing:-.05em;margin:6px 0 30px}.primary,.secondary{padding:14px 20px;font-size:10px;letter-spacing:.1em;text-transform:uppercase}.primary{background:#111;color:#fff;border:1px solid #111}.secondary{background:transparent;color:#111;border:1px solid #111}.head{display:flex;justify-content:space-between;align-items:end;margin-bottom:25px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.artist{min-height:330px;border:1px solid var(--line);background:var(--card);padding:17px;display:flex;flex-direction:column}.artist .bottom{margin-top:auto}.artist h3{font-size:21px;margin:0 0 7px}.country{font-size:12px;color:var(--muted)}.actions{display:flex;gap:6px;margin-top:16px}.actions button{flex:1;padding:10px 5px;font-size:9px}.rank{display:grid;grid-template-columns:55px 1fr 120px 70px;padding:18px 0;border-top:1px solid var(--line);align-items:center}.rank:last-child{border-bottom:1px solid var(--line)}.rankname{font-size:19px}.right{text-align:right;font-size:11px;color:var(--muted)}.profile{max-width:760px;margin:auto}.profile h1{font-size:62px;letter-spacing:-.06em;margin:10px 0 4px}.stats{display:grid;grid-template-columns:repeat(3,1fr);margin:30px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.stat{padding:20px 0}.stat+ .stat{border-left:1px solid var(--line);padding-left:20px}.stat b{display:block;font-size:34px}.stat span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.taste{text-align:center;max-width:700px;margin:auto}.tasteScore{font-size:110px;font-weight:700;letter-spacing:-.08em}.box{border:1px solid var(--line);padding:25px;text-align:left;margin:25px 0}.form{max-width:600px;margin:auto}.form label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin:20px 0 7px}.form input{width:100%;padding:14px;border:1px solid var(--line);background:var(--card)}.note{font-size:13px;line-height:1.5;color:#555}.modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.open{display:flex}.modalbox{background:var(--bg);width:min(520px,100%);padding:30px}.close{float:right;border:0;background:none;font-size:25px}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.nav button:nth-child(3){display:none}.grid{grid-template-columns:1fr}.artist{min-height:210px}.profile h1{font-size:45px}.rank{grid-template-columns:45px 1fr 80px}.rank .trend{display:none}}
+</style></head><body>
+<header><div class="brand">FIVE</div><nav class="nav"><button onclick="show('play')">PLAY</button><button onclick="show('rankings')">RANKINGS</button><button onclick="show('taste')">YOUR TASTE</button><button onclick="show('submit')">SUBMIT ARTIST</button></nav></header>
 <main>
-<section id="intro" class="view intro">
-<div class="logo">FIVE</div><div class="tag">Five artists. One choice.</div>
-<button onclick="start()">START</button>
-</section>
-
-<section id="vote" class="view hidden">
-<div class="prompt">Choose one artist.</div>
-<div id="grid" class="grid"></div>
-</section>
-
-<section id="result" class="view result hidden">
-<div class="prompt">Choice recorded.</div>
-<h2 id="chosen"></h2><p id="chosenMeta"></p>
-<a id="chosenInstagram" href="#" target="_blank" rel="noopener">VIEW INSTAGRAM ↗</a>
-<div class="links"><button onclick="nextRound()">NEXT FIVE</button><button class="secondary" onclick="showIntro()">EXIT</button></div>
-</section>
+<section id="home" class="screen active"><div class="hero"><div class="eyebrow">A people-powered artist discovery platform</div><h1>FIVE</h1><p>Five artists. One choice.</p><button class="primary" onclick="show('play');newRound()">START</button></div></section>
+<section id="play" class="screen"><div class="head"><div><div class="eyebrow">Discover</div><h2>Choose one.</h2></div><div class="eyebrow">Round <span id="round">01</span></div></div><div id="grid" class="grid"></div></section>
+<section id="rankings" class="screen"><div class="head"><div><div class="eyebrow">Public ranking</div><h2>Artists</h2></div><div class="eyebrow">Based on people’s choices</div></div><div id="ranking"></div></section>
+<section id="artist" class="screen"><div class="profile"><div class="eyebrow">Artist profile</div><h1 id="pname"></h1><div id="pcountry" class="country"></div><div class="stats"><div class="stat"><b id="prank"></b><span>Global rank</span></div><div class="stat"><b id="pchoices"></b><span>People chose</span></div><div class="stat"><b id="prate"></b><span>Choice rate</span></div></div><p class="note">Prototype statistics. The production version will calculate these from real user choices.</p><button class="secondary" onclick="show('rankings')">BACK TO RANKINGS</button></div></section>
+<section id="taste" class="screen"><div class="taste"><div class="eyebrow">Your art taste</div><h2>What do you choose?</h2><div class="tasteScore" id="score">—</div><div class="box"><b>Your profile</b><p id="tasteText" class="note">Make choices to build a personal taste profile.</p></div><button class="primary" onclick="show('play');newRound()">MAKE MORE CHOICES</button></div></section>
+<section id="submit" class="screen"><div class="form"><div class="eyebrow">For artists</div><h2>Submit an artist.</h2><p class="note">Artists can request consideration. FIVE reviews submissions before adding an artist to the public database.</p><label>Name</label><input id="sn" placeholder="Artist name"><label>Country</label><input id="sc" placeholder="Country"><label>Instagram</label><input id="si" placeholder="@handle or URL"><label>Website (optional)</label><input placeholder="https://"><br><br><button class="primary" onclick="submitArtist()">SEND REQUEST</button><p id="sr" class="note"></p></div></section>
 </main>
-
-<div id="modal" class="modal hidden" onclick="closeProfile(event)">
-<div class="modal-box" onclick="event.stopPropagation()">
-<div class="modal-top"><div class="prompt" style="margin:0;text-align:left">Artist profile</div><button class="close" onclick="closeProfile()">×</button></div>
-<h2 id="profileName"></h2><div id="profileCountry" class="modal-country"></div>
-<div class="modal-copy">Look at the artist first. Then decide if you want to choose them.</div>
-<a id="profileInstagram" class="modal-instagram" href="#" target="_blank" rel="noopener">OPEN INSTAGRAM ↗</a>
-<br>
-<button id="profileChoose" onclick="chooseProfile()">CHOOSE THIS ARTIST</button>
-</div>
-</div>
-
+<div id="modal" class="modal" onclick="closeModal()"><div class="modalbox" onclick="event.stopPropagation()"><button class="close" onclick="closeModal()">×</button><div class="eyebrow">Artist profile</div><h2 id="mn"></h2><div id="mc" class="country"></div><p class="note">Look at the artist first. Then decide if you want to choose them.</p><p><a id="mi" href="#" target="_blank">OPEN INSTAGRAM</a></p><button class="primary" id="mchoose">CHOOSE THIS ARTIST</button></div></div>
 <script>
-const artists=[
-{name:"Murt Burner",country:"Ukraine",instagram:"https://instagram.com/murtburner"},
-{name:"Refik Anadol",country:"Türkiye",instagram:"https://instagram.com/refikanadol"},
-{name:"Daniel Arsham",country:"USA",instagram:"https://instagram.com/danielarsham"},
-{name:"Beeple",country:"USA",instagram:"https://instagram.com/beeple_crap"},
-{name:"JR",country:"France",instagram:"https://instagram.com/jr"}
-];
-
-let choices=Number(localStorage.getItem("fiveChoices")||0),current=[],profileIndex=-1;
-
-function updateCount(){document.getElementById("count").textContent=choices+" choice"+(choices===1?"":"s")}
-function start(){document.getElementById("intro").classList.add("hidden");document.getElementById("result").classList.add("hidden");document.getElementById("vote").classList.remove("hidden");nextRound()}
-function nextRound(){
- document.getElementById("result").classList.add("hidden");document.getElementById("vote").classList.remove("hidden");
- current=[...artists].sort(()=>Math.random()-.5).slice(0,5);
- document.getElementById("grid").innerHTML=current.map((a,i)=>`
- <article class="card">
-  <div class="number">0${i+1}</div><div class="name">${a.name}</div><div class="country">${a.country}</div>
-  <div class="actions">
-   <button class="profile-btn" onclick="openProfile(${i})">VIEW PROFILE</button>
-   <button class="choose-btn" onclick="choose(${i})">CHOOSE</button>
-  </div>
- </article>`).join("");
-}
-function openProfile(i){
- profileIndex=i;const a=current[i];
- document.getElementById("profileName").textContent=a.name;
- document.getElementById("profileCountry").textContent=a.country;
- document.getElementById("profileInstagram").href=a.instagram;
- document.getElementById("modal").classList.remove("hidden");
-}
-function closeProfile(){document.getElementById("modal").classList.add("hidden");profileIndex=-1}
-function chooseProfile(){if(profileIndex>=0){const i=profileIndex;closeProfile();choose(i)}}
-function choose(i){
- const a=current[i];choices++;localStorage.setItem("fiveChoices",choices);updateCount();
- document.getElementById("chosen").textContent=a.name;document.getElementById("chosenMeta").textContent=a.country;
- document.getElementById("chosenInstagram").href=a.instagram;
- document.getElementById("vote").classList.add("hidden");document.getElementById("result").classList.remove("hidden");
-}
-function showIntro(){closeProfile();document.getElementById("vote").classList.add("hidden");document.getElementById("result").classList.add("hidden");document.getElementById("intro").classList.remove("hidden")}
-updateCount();
-</script>
-</body>
-</html>
+const A=[{n:"Murt Burner",c:"Ukraine",i:"https://instagram.com/murtburner",r:17,v:1284,x:62},{n:"Daniel Arsham",c:"USA",i:"#",r:1,v:8420,x:71},{n:"JR",c:"France",i:"#",r:2,v:7912,x:68},{n:"Beeple",c:"USA",i:"#",r:3,v:7451,x:65},{n:"Refik Anadol",c:"Türkiye",i:"#",r:4,v:7022,x:63},{n:"Elena Rossi",c:"Italy",i:"#",r:5,v:6214,x:61},{n:"Nika Petrov",c:"Georgia",i:"#",r:6,v:5980,x:59},{n:"Milo Hart",c:"USA",i:"#",r:7,v:5610,x:57},{n:"Eva Stern",c:"Austria",i:"#",r:8,v:5322,x:55},{n:"Jonas Berg",c:"Sweden",i:"#",r:9,v:5104,x:54}];
+let current=[],round=0,chosen=JSON.parse(localStorage.getItem("fiveChosen")||"[]");
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");scrollTo(0,0);if(id==="rankings")rankings();if(id==="taste")taste()}
+function newRound(){round++;document.getElementById("round").textContent=String(round).padStart(2,"0");current=[...A].sort(()=>Math.random()-.5).slice(0,5);document.getElementById("grid").innerHTML=current.map((a,i)=>`<article class="artist"><div class="eyebrow">0${i+1}</div><div class="bottom"><h3>${a.n}</h3><div class="country">${a.c}</div><div class="actions"><button class="secondary" onclick="profile(${i})">PROFILE</button><button class="primary" onclick="choose(${i})">CHOOSE</button></div></div></article>`).join("")}
+function profile(i){let a=current[i];document.getElementById("mn").textContent=a.n;document.getElementById("mc").textContent=a.c;document.getElementById("mi").href=a.i;document.getElementById("mchoose").onclick=()=>{closeModal();choose(i)};document.getElementById("modal").classList.add("open")}
+function closeModal(){document.getElementById("modal").classList.remove("open")}
+function choose(i){chosen.push(current[i]);localStorage.setItem("fiveChosen",JSON.stringify(chosen));taste();show("taste")}
+function rankings(){document.getElementById("ranking").innerHTML=A.slice().sort((a,b)=>a.r-b.r).map(a=>`<div class="rank" onclick="artist('${a.n.replace(/'/g,"\\'")}')"><div>#${a.r}</div><div class="rankname">${a.n}<div class="country">${a.c}</div></div><div class="right">${a.v.toLocaleString()} choices</div><div class="right trend">VIEW →</div></div>`).join("")}
+function artist(n){let a=A.find(x=>x.n===n);document.getElementById("pname").textContent=a.n;document.getElementById("pcountry").textContent=a.c;document.getElementById("prank").textContent="#"+a.r;document.getElementById("pchoices").textContent=a.v.toLocaleString();document.getElementById("prate").textContent=a.x+"%";show("artist")}
+function taste(){document.getElementById("score").textContent=chosen.length?String(chosen.length).padStart(2,"0"):"—";document.getElementById("tasteText").textContent=chosen.length?`You have made ${chosen.length} choice${chosen.length===1?"":"s"}. Keep playing to build a profile based on the artists you consistently choose.`:"Make choices to build a personal taste profile."}
+function submitArtist(){let n=document.getElementById("sn").value.trim();document.getElementById("sr").textContent=n?`Request received for ${n}. In the production version FIVE will review it before adding the artist.`:"Enter an artist name first."}
+taste();
+</script></body></html>
