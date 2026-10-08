@@ -1,1 +1,115 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>FIVE — Five artists. One choice.</title><style>:root{--bg:#f2f0eb;--fg:#111;--muted:#777;--line:#d8d5cf}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}header{padding:28px 32px;display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase}main{min-height:calc(100vh - 76px);display:flex;align-items:center;justify-content:center;padding:40px 24px}.view{width:min(1120px,100%)}.intro{text-align:center}.logo{font-size:clamp(64px,12vw,150px);font-weight:700;letter-spacing:-.08em;line-height:.8}.tag{margin:28px 0 40px;font-size:18px}button{font:inherit;border:0;background:#111;color:#fff;padding:16px 28px;cursor:pointer}.hidden{display:none}.prompt{text-align:center;margin-bottom:28px;font-size:14px;letter-spacing:.12em;text-transform:uppercase}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.card{min-height:330px;border:1px solid var(--line);background:#f7f6f2;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;text-align:left;cursor:pointer;transition:.15s}.card:hover{transform:translateY(-4px);background:#fff}.number{font-size:11px;color:var(--muted);margin-bottom:auto}.name{font-size:21px;line-height:1.05}.country{font-size:12px;color:var(--muted);margin-top:8px}.result{text-align:center}.result h2{font-size:48px;letter-spacing:-.04em;margin:10px 0}.result p{color:var(--muted)}.links{margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.secondary{background:transparent;color:#111;border:1px solid #111}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.card{min-height:210px}}@media(max-width:480px){.grid{grid-template-columns:1fr}.card{min-height:145px}}</style></head><body><header><div>FIVE</div><div id='count'>0 choices</div></header><main><section id='intro' class='view intro'><div class='logo'>FIVE</div><div class='tag'>Five artists. One choice.</div><button onclick='start()'>START</button></section><section id='vote' class='view hidden'><div class='prompt'>Choose one artist.</div><div id='grid' class='grid'></div></section><section id='result' class='view result hidden'><div class='prompt'>Choice recorded.</div><h2 id='chosen'></h2><p>Ready for five more?</p><div class='links'><button onclick='nextRound()'>NEXT FIVE</button><button class='secondary' onclick='showIntro()'>EXIT</button></div></section></main><script>const artists=[['Maya Chen','Seoul'],['Daniel Roth','Berlin'],['Murt Burner','Ukraine'],['Elena Rossi','Milan'],['Jonas Berg','Stockholm'],['Amina Diallo','Paris'],['Noah Klein','New York'],['Sofia Marin','Madrid'],['Luca Vieri','Rome'],['Iris Novak','Prague'],['Theo Ward','London'],['Nika Petrov','Tbilisi'],['Sara Holm','Copenhagen'],['Milo Hart','Los Angeles'],['Eva Stern','Vienna']];let choices=Number(localStorage.getItem('fiveChoices')||0),current=[];function updateCount(){document.getElementById('count').textContent=choices+' choice'+(choices===1?'':'s')}function start(){document.getElementById('intro').classList.add('hidden');document.getElementById('result').classList.add('hidden');document.getElementById('vote').classList.remove('hidden');nextRound()}function nextRound(){document.getElementById('result').classList.add('hidden');document.getElementById('vote').classList.remove('hidden');current=[...artists].sort(()=>Math.random()-.5).slice(0,5);document.getElementById('grid').innerHTML=current.map((a,i)=>`<article class='card' onclick='choose(${i})'><div class='number'>0${i+1}</div><div class='name'>${a[0]}</div><div class='country'>${a[1]}</div></article>`).join('')}function choose(i){const a=current[i];choices++;localStorage.setItem('fiveChoices',choices);updateCount();document.getElementById('chosen').textContent=a[0];document.getElementById('vote').classList.add('hidden');document.getElementById('result').classList.remove('hidden')}function showIntro(){document.getElementById('vote').classList.add('hidden');document.getElementById('result').classList.add('hidden');document.getElementById('intro').classList.remove('hidden')}updateCount();</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FIVE — Five artists. One choice.</title>
+<style>
+:root{--bg:#f2f0eb;--fg:#111;--muted:#777;--line:#d8d5cf;--card:#f7f6f2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}
+header{padding:28px 32px;display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+main{min-height:calc(100vh - 76px);display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.view{width:min(1120px,100%)}
+.intro{text-align:center}.logo{font-size:clamp(64px,12vw,150px);font-weight:700;letter-spacing:-.08em;line-height:.8}
+.tag{margin:28px 0 40px;font-size:18px}
+button{font:inherit;border:0;background:#111;color:#fff;padding:16px 28px;cursor:pointer}
+button:hover{background:#333}.hidden{display:none}
+.prompt{text-align:center;margin-bottom:28px;font-size:14px;letter-spacing:.12em;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.card{min-height:350px;border:1px solid var(--line);background:var(--card);padding:18px;display:flex;flex-direction:column;justify-content:flex-end;text-align:left;transition:.15s}
+.card:hover{transform:translateY(-4px);background:#fff}
+.number{font-size:11px;color:var(--muted);margin-bottom:auto}.name{font-size:21px;line-height:1.05}
+.country{font-size:12px;color:var(--muted);margin-top:8px}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.actions button,.actions a{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;text-decoration:none}
+.profile-btn{background:transparent;color:#111;border:1px solid #111}.choose-btn{background:#111;color:#fff}
+.result{text-align:center}.result h2{font-size:48px;letter-spacing:-.04em;margin:10px 0}.result p{color:var(--muted)}
+.result a{color:#111;text-decoration:underline}.links{margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.secondary{background:transparent;color:#111;border:1px solid #111}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal.hidden{display:none}.modal-box{width:min(460px,100%);background:var(--bg);padding:28px}
+.modal-top{display:flex;justify-content:space-between;align-items:flex-start}.close{background:transparent;color:#111;padding:0;font-size:24px}
+.modal h2{font-size:36px;letter-spacing:-.04em;margin:30px 0 6px}.modal-country{color:var(--muted);font-size:13px}
+.modal-copy{margin:28px 0;color:#333;line-height:1.45}.modal-instagram{display:inline-block;color:#111;text-decoration:underline;margin-bottom:24px}
+@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.card{min-height:230px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.card{min-height:190px}}
+</style>
+</head>
+<body>
+<header><div>FIVE</div><div id="count">0 choices</div></header>
+<main>
+<section id="intro" class="view intro">
+<div class="logo">FIVE</div><div class="tag">Five artists. One choice.</div>
+<button onclick="start()">START</button>
+</section>
+
+<section id="vote" class="view hidden">
+<div class="prompt">Choose one artist.</div>
+<div id="grid" class="grid"></div>
+</section>
+
+<section id="result" class="view result hidden">
+<div class="prompt">Choice recorded.</div>
+<h2 id="chosen"></h2><p id="chosenMeta"></p>
+<a id="chosenInstagram" href="#" target="_blank" rel="noopener">VIEW INSTAGRAM ↗</a>
+<div class="links"><button onclick="nextRound()">NEXT FIVE</button><button class="secondary" onclick="showIntro()">EXIT</button></div>
+</section>
+</main>
+
+<div id="modal" class="modal hidden" onclick="closeProfile(event)">
+<div class="modal-box" onclick="event.stopPropagation()">
+<div class="modal-top"><div class="prompt" style="margin:0;text-align:left">Artist profile</div><button class="close" onclick="closeProfile()">×</button></div>
+<h2 id="profileName"></h2><div id="profileCountry" class="modal-country"></div>
+<div class="modal-copy">Look at the artist first. Then decide if you want to choose them.</div>
+<a id="profileInstagram" class="modal-instagram" href="#" target="_blank" rel="noopener">OPEN INSTAGRAM ↗</a>
+<br>
+<button id="profileChoose" onclick="chooseProfile()">CHOOSE THIS ARTIST</button>
+</div>
+</div>
+
+<script>
+const artists=[
+{name:"Murt Burner",country:"Ukraine",instagram:"https://instagram.com/murtburner"},
+{name:"Refik Anadol",country:"Türkiye",instagram:"https://instagram.com/refikanadol"},
+{name:"Daniel Arsham",country:"USA",instagram:"https://instagram.com/danielarsham"},
+{name:"Beeple",country:"USA",instagram:"https://instagram.com/beeple_crap"},
+{name:"JR",country:"France",instagram:"https://instagram.com/jr"}
+];
+
+let choices=Number(localStorage.getItem("fiveChoices")||0),current=[],profileIndex=-1;
+
+function updateCount(){document.getElementById("count").textContent=choices+" choice"+(choices===1?"":"s")}
+function start(){document.getElementById("intro").classList.add("hidden");document.getElementById("result").classList.add("hidden");document.getElementById("vote").classList.remove("hidden");nextRound()}
+function nextRound(){
+ document.getElementById("result").classList.add("hidden");document.getElementById("vote").classList.remove("hidden");
+ current=[...artists].sort(()=>Math.random()-.5).slice(0,5);
+ document.getElementById("grid").innerHTML=current.map((a,i)=>`
+ <article class="card">
+  <div class="number">0${i+1}</div><div class="name">${a.name}</div><div class="country">${a.country}</div>
+  <div class="actions">
+   <button class="profile-btn" onclick="openProfile(${i})">VIEW PROFILE</button>
+   <button class="choose-btn" onclick="choose(${i})">CHOOSE</button>
+  </div>
+ </article>`).join("");
+}
+function openProfile(i){
+ profileIndex=i;const a=current[i];
+ document.getElementById("profileName").textContent=a.name;
+ document.getElementById("profileCountry").textContent=a.country;
+ document.getElementById("profileInstagram").href=a.instagram;
+ document.getElementById("modal").classList.remove("hidden");
+}
+function closeProfile(){document.getElementById("modal").classList.add("hidden");profileIndex=-1}
+function chooseProfile(){if(profileIndex>=0){const i=profileIndex;closeProfile();choose(i)}}
+function choose(i){
+ const a=current[i];choices++;localStorage.setItem("fiveChoices",choices);updateCount();
+ document.getElementById("chosen").textContent=a.name;document.getElementById("chosenMeta").textContent=a.country;
+ document.getElementById("chosenInstagram").href=a.instagram;
+ document.getElementById("vote").classList.add("hidden");document.getElementById("result").classList.remove("hidden");
+}
+function showIntro(){closeProfile();document.getElementById("vote").classList.add("hidden");document.getElementById("result").classList.add("hidden");document.getElementById("intro").classList.remove("hidden")}
+updateCount();
+</script>
+</body>
+</html>
