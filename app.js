@@ -46,6 +46,21 @@ function url(v) {
   return s ? (/^https?:\/\//i.test(s) ? s : "https://" + s) : "";
 }
 
+function normalizeInstagram(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const username = raw.replace(/^@/, "");
+  if (/^[A-Za-z0-9._]{1,30}$/.test(username) && !/instagram\.com/i.test(username)) {
+    return `https://www.instagram.com/${username}/`;
+  }
+  const normalized = url(raw);
+  try {
+    const parsed = new URL(normalized);
+    if (!/(^|\.)instagram\.com$/i.test(parsed.hostname)) return "";
+    return `https://www.instagram.com/${parsed.pathname.replace(/^\/+|\/+$/g, "")}/`;
+  } catch (_) { return ""; }
+}
+
 function signedIn() {
   return !!currentSession?.user;
 }
@@ -199,9 +214,6 @@ function normalizeArtist(row, roundId) {
     name: row.name || "Untitled artist",
     country: row.country || "",
     instagramUrl: row.instagram_url || "",
-    websiteUrl: row.website_url || "",
-    imageUrl: row.image_url || "",
-    categories: row.categories || []
   };
 }
 
@@ -257,7 +269,6 @@ function renderRound() {
       <div class="number">0${i+1}</div>
       <div class="name">${escapeHtml(a.name)}</div>
       <div class="country">${escapeHtml(a.country || "Country not listed")}</div>
-      <div class="tags">${(a.categories || []).slice(0,3).map(x => `<span class="tagpill">${escapeHtml(x)}</span>`).join("")}</div>
       <div class="card-actions">
         <button class="profile" onclick="openProfile(${i})">PROFILE</button>
         <button class="choose" onclick="choose(${i})">CHOOSE</button>
@@ -271,15 +282,11 @@ function openProfile(i) {
   profileIndex = i;
   $("profileName").textContent = a.name;
   $("profileCountry").textContent = a.country || "Country not listed";
-  $("profileCopy").textContent = (a.categories || []).length
-    ? a.categories.join(" · ")
-    : "Artist profile from the FIVE database.";
-
-  const ig = url(a.instagramUrl), site = url(a.websiteUrl);
+  const ig = url(a.instagramUrl);
+  $("profileCopy").textContent = ig ? "Instagram profile" : "No Instagram link provided.";
   $("profileInstagram").href = ig || "#";
-  $("profileWebsite").href = site || "#";
   $("profileInstagram").classList.toggle("hidden", !ig);
-  $("profileWebsite").classList.toggle("hidden", !site);
+  if ($("profileWebsite")) $("profileWebsite").classList.add("hidden");
   $("modal").classList.remove("hidden");
 }
 
@@ -525,24 +532,24 @@ async function sendSubmission() {
 
   const name = $("artistName").value.trim();
   const country = $("artistCountry").value.trim();
-  const instagram_url = url($("artistInstagram").value);
-  const website_url = url($("artistWebsite").value);
+  const instagram_url = normalizeInstagram($("artistInstagram").value);
 
-  if (!name || !country) return message("submitMessage", "Artist name and country are required.", "error");
+  if (!name || !country || !instagram_url) {
+    return message("submitMessage", "Artist name, country, and Instagram are required.", "error");
+  }
 
   setButton("submitArtistButton", true, "SENDING...");
   const { error } = await supabaseClient.from("artist_submissions").insert({
     submitted_by: currentSession.user.id,
     name,
     country,
-    instagram_url: instagram_url || null,
-    website_url: website_url || null
+    instagram_url
   });
   setButton("submitArtistButton", false);
 
   if (error) return message("submitMessage", error.message, "error");
 
-  ["artistName","artistCountry","artistInstagram","artistWebsite"].forEach(id => $(id).value = "");
+  ["artistName", "artistCountry", "artistInstagram"].forEach(id => { if ($(id)) $(id).value = ""; });
   message("submitMessage", "Artist submitted for FIVE review.", "success");
 }
 
@@ -594,19 +601,15 @@ function ensureAdminUI() {
         <div><div class="eyebrow">FIVE CONTROL</div><div class="section-title">ADMIN</div></div>
         <div class="round" id="adminSummary">LOADING</div>
       </div>
-      <p class="submit-note">Manage artist submissions and the approved database. Changes take effect immediately.</p>
       <div id="adminMessage" class="message hidden"></div>
       <div class="report" style="margin:22px 0">
-        <div class="eyebrow">ADD ARTIST MANUALLY</div>
+        <div class="eyebrow">ADD ARTIST</div>
         <div class="form">
-          <div class="field"><label for="adminArtistName">Artist name *</label><input id="adminArtistName" maxlength="160" placeholder="Artist name"></div>
-          <div class="field"><label for="adminArtistCountry">Country *</label><input id="adminArtistCountry" maxlength="100" placeholder="Country"></div>
-          <div class="field"><label for="adminArtistInstagram">Instagram URL</label><input id="adminArtistInstagram" type="url" placeholder="https://instagram.com/..."></div>
-          <div class="field"><label for="adminArtistWebsite">Website URL</label><input id="adminArtistWebsite" type="url" placeholder="https://..."></div>
-          <div class="field"><label for="adminArtistImage">Image URL</label><input id="adminArtistImage" type="url" placeholder="https://..."></div>
-          <div class="field"><label for="adminArtistCategories">Categories (comma-separated)</label><input id="adminArtistCategories" maxlength="300" placeholder="Painting, Sculpture, Digital"></div>
+          <div class="field"><label for="adminArtistName">Artist name *</label><input id="adminArtistName" maxlength="160" placeholder="Artist name" required></div>
+          <div class="field"><label for="adminArtistCountry">Country *</label><input id="adminArtistCountry" maxlength="100" placeholder="Country" required></div>
+          <div class="field"><label for="adminArtistInstagram">Instagram *</label><input id="adminArtistInstagram" type="text" placeholder="@username or Instagram URL" required></div>
         </div>
-        <button class="primary" id="adminAddButton" onclick="adminAddArtist()">ADD APPROVED ARTIST</button>
+        <button class="primary" id="adminAddButton" onclick="adminAddArtist()">ADD ARTIST</button>
       </div>
       <div class="report" style="margin:22px 0">
         <div class="section-head" style="margin-bottom:14px">
@@ -618,7 +621,7 @@ function ensureAdminUI() {
       <div class="report" style="margin:22px 0">
         <div class="section-head" style="margin-bottom:14px">
           <div><div class="eyebrow">DATABASE</div><h3 style="margin:8px 0">ARTISTS</h3></div>
-          <div class="small">Removal preserves existing call history.</div>
+          <div class="small">Existing call history is preserved.</div>
         </div>
         <div id="adminArtists"><div class="small">Loading artists…</div></div>
       </div>`;
@@ -689,15 +692,11 @@ async function loadAdminData() {
     const pending = rows.filter(row => row.status === "pending").length;
     if ($("adminSummary")) $("adminSummary").textContent = `${pending} PENDING`;
     submissionsEl.innerHTML = rows.length ? rows.map(row => `
-      <div class="panel-row" style="align-items:flex-start">
+      <div class="panel-row" style="align-items:center">
         <div style="flex:1;min-width:0">
           <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div>
           <div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
-          <div class="small">${escapeHtml(row.created_at ? new Date(row.created_at).toLocaleString() : "")}</div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
-            ${row.instagram_url ? `<a href="${escapeHtml(url(row.instagram_url))}" target="_blank" rel="noopener">INSTAGRAM</a>` : ""}
-            ${row.website_url ? `<a href="${escapeHtml(url(row.website_url))}" target="_blank" rel="noopener">WEBSITE</a>` : ""}
-          </div>
+          ${row.instagram_url ? `<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url) || "#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>` : `<div class="small">Instagram missing</div>`}
         </div>
         ${row.status === "pending" ? `<div style="display:flex;flex-direction:column;gap:8px"><button class="primary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','approved')">APPROVE</button><button class="secondary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','rejected')">REJECT</button></div>` : ""}
       </div>`).join("") : `<div class="small">No submissions yet.</div>`;
@@ -708,11 +707,11 @@ async function loadAdminData() {
   } else {
     const rows = Array.isArray(artistsResult.data) ? artistsResult.data : [];
     if (artistsEl) artistsEl.innerHTML = rows.length ? rows.map(row => `
-      <div class="panel-row" style="align-items:flex-start">
+      <div class="panel-row" style="align-items:center">
         <div style="flex:1;min-width:0">
           <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div>
           <div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
-          <div class="small">${escapeHtml((row.categories || []).join(", "))}</div>
+          ${row.instagram_url ? `<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url) || "#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>` : `<div class="small">Instagram missing</div>`}
         </div>
         <button class="secondary" onclick="adminDeleteArtist('${escapeHtml(row.id)}')">REMOVE</button>
       </div>`).join("") : `<div class="small">No artists in the database.</div>`;
@@ -745,21 +744,21 @@ async function adminAddArtist() {
   if (!isFiveAdmin || adminBusy) return;
   const name = $("adminArtistName")?.value.trim();
   const country = $("adminArtistCountry")?.value.trim();
-  if (!name || !country) return adminNotice("Artist name and country are required.", "error");
-  const categories = ($("adminArtistCategories")?.value || "").split(",").map(x => x.trim()).filter(Boolean);
+  const instagram = normalizeInstagram($("adminArtistInstagram")?.value);
+  if (!name || !country || !instagram) return adminNotice("Artist name, country, and Instagram are required.", "error");
   adminBusy = true;
   setButton("adminAddButton", true, "ADDING...");
   try {
     const { error } = await supabaseClient.rpc("admin_add_artist", {
       p_name: name,
       p_country: country,
-      p_instagram_url: url($("adminArtistInstagram")?.value) || null,
-      p_website_url: url($("adminArtistWebsite")?.value) || null,
-      p_image_url: url($("adminArtistImage")?.value) || null,
-      p_categories: categories
+      p_instagram_url: instagram,
+      p_website_url: null,
+      p_image_url: null,
+      p_categories: []
     });
     if (error) throw error;
-    ["adminArtistName","adminArtistCountry","adminArtistInstagram","adminArtistWebsite","adminArtistImage","adminArtistCategories"].forEach(id => { if ($(id)) $(id).value = ""; });
+    ["adminArtistName", "adminArtistCountry", "adminArtistInstagram"].forEach(id => { if ($(id)) $(id).value = ""; });
     adminNotice("Artist added and approved.", "success");
     await loadAdminData();
     await loadHomeData();
