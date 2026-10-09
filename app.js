@@ -5,7 +5,7 @@ const supabaseClient = window.supabase.createClient(
 );
 
 const $ = id => document.getElementById(id);
-const views = ["home","auth","play","result","calls","eye","daily","rankings","submit"];
+const views = ["home","auth","play","result","calls","eye","daily","rankings","submit","admin"];
 
 let currentSession = null;
 let authMode = "signin";
@@ -14,6 +14,8 @@ let profileIndex = -1;
 let myCalls = [];
 let busy = false;
 let callsLoading = false;
+let isFiveAdmin = false;
+let adminBusy = false;
 
 function show(id) {
   views.forEach(v => $(v)?.classList.add("hidden"));
@@ -579,6 +581,213 @@ async function shareFiveStory({title, subtitle, detail, type}) {
   try{if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})))await navigator.share({files:[file],title:"My FIVE Story",text:`${title} — ${subtitle}`});else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="five-story.png";a.click();URL.revokeObjectURL(a.href);alert("Story image saved. Upload it to Instagram Stories.");}}catch(e){if(e?.name!=="AbortError")alert("Could not share the story image. Please try again.");}
 }
 
+
+function ensureAdminUI() {
+  if (!$("admin")) {
+    const main = document.querySelector("main");
+    if (!main) return;
+    const section = document.createElement("section");
+    section.id = "admin";
+    section.className = "view hidden";
+    section.innerHTML = `
+      <div class="section-head">
+        <div><div class="eyebrow">FIVE CONTROL</div><div class="section-title">ADMIN</div></div>
+        <div class="round" id="adminSummary">LOADING</div>
+      </div>
+      <p class="submit-note">Manage artist submissions and the approved database. Changes take effect immediately.</p>
+      <div id="adminMessage" class="message hidden"></div>
+      <div class="report" style="margin:22px 0">
+        <div class="eyebrow">ADD ARTIST MANUALLY</div>
+        <div class="form">
+          <div class="field"><label for="adminArtistName">Artist name *</label><input id="adminArtistName" maxlength="160" placeholder="Artist name"></div>
+          <div class="field"><label for="adminArtistCountry">Country *</label><input id="adminArtistCountry" maxlength="100" placeholder="Country"></div>
+          <div class="field"><label for="adminArtistInstagram">Instagram URL</label><input id="adminArtistInstagram" type="url" placeholder="https://instagram.com/..."></div>
+          <div class="field"><label for="adminArtistWebsite">Website URL</label><input id="adminArtistWebsite" type="url" placeholder="https://..."></div>
+          <div class="field"><label for="adminArtistImage">Image URL</label><input id="adminArtistImage" type="url" placeholder="https://..."></div>
+          <div class="field"><label for="adminArtistCategories">Categories (comma-separated)</label><input id="adminArtistCategories" maxlength="300" placeholder="Painting, Sculpture, Digital"></div>
+        </div>
+        <button class="primary" id="adminAddButton" onclick="adminAddArtist()">ADD APPROVED ARTIST</button>
+      </div>
+      <div class="report" style="margin:22px 0">
+        <div class="section-head" style="margin-bottom:14px">
+          <div><div class="eyebrow">REVIEW QUEUE</div><h3 style="margin:8px 0">SUBMISSIONS</h3></div>
+          <button class="secondary" onclick="loadAdminData()">REFRESH</button>
+        </div>
+        <div id="adminSubmissions"><div class="small">Loading submissions…</div></div>
+      </div>
+      <div class="report" style="margin:22px 0">
+        <div class="section-head" style="margin-bottom:14px">
+          <div><div class="eyebrow">DATABASE</div><h3 style="margin:8px 0">ARTISTS</h3></div>
+          <div class="small">Removal preserves existing call history.</div>
+        </div>
+        <div id="adminArtists"><div class="small">Loading artists…</div></div>
+      </div>`;
+    main.appendChild(section);
+  }
+
+  let navButton = $("adminNav");
+  if (!navButton) {
+    const nav = document.querySelector(".topnav");
+    if (nav) {
+      navButton = document.createElement("button");
+      navButton.id = "adminNav";
+      navButton.textContent = "ADMIN";
+      navButton.onclick = openAdmin;
+      nav.appendChild(navButton);
+    }
+  }
+  if (navButton) navButton.classList.toggle("hidden", !isFiveAdmin);
+}
+
+async function refreshAdminAccess() {
+  if (!signedIn()) {
+    isFiveAdmin = false;
+    $("adminNav")?.classList.add("hidden");
+    if ($("admin") && !$("admin").classList.contains("hidden")) home();
+    return false;
+  }
+  try {
+    const { data, error } = await supabaseClient.rpc("is_five_admin");
+    if (error) throw error;
+    isFiveAdmin = data === true;
+  } catch (error) {
+    isFiveAdmin = false;
+    console.error("FIVE admin access check failed:", error);
+  }
+  ensureAdminUI();
+  return isFiveAdmin;
+}
+
+async function openAdmin() {
+  const allowed = await refreshAdminAccess();
+  if (!allowed) return authView("Admin access is restricted.");
+  show("admin");
+  await loadAdminData();
+}
+
+function adminNotice(text, type = "") {
+  message("adminMessage", text, type);
+}
+
+async function loadAdminData() {
+  if (!isFiveAdmin) return adminNotice("Admin access is required.", "error");
+  const submissionsEl = $("adminSubmissions");
+  const artistsEl = $("adminArtists");
+  if (submissionsEl) submissionsEl.innerHTML = `<div class="small">Loading submissions…</div>`;
+  if (artistsEl) artistsEl.innerHTML = `<div class="small">Loading artists…</div>`;
+  adminNotice("");
+
+  const [submissionsResult, artistsResult] = await Promise.all([
+    supabaseClient.rpc("admin_list_submissions"),
+    supabaseClient.rpc("admin_list_artists")
+  ]);
+
+  if (submissionsResult.error) {
+    if (submissionsEl) submissionsEl.innerHTML = `<div class="small">Could not load submissions: ${escapeHtml(submissionsResult.error.message)}</div>`;
+  } else {
+    const rows = Array.isArray(submissionsResult.data) ? submissionsResult.data : [];
+    const pending = rows.filter(row => row.status === "pending").length;
+    if ($("adminSummary")) $("adminSummary").textContent = `${pending} PENDING`;
+    submissionsEl.innerHTML = rows.length ? rows.map(row => `
+      <div class="panel-row" style="align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div>
+          <div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
+          <div class="small">${escapeHtml(row.created_at ? new Date(row.created_at).toLocaleString() : "")}</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+            ${row.instagram_url ? `<a href="${escapeHtml(url(row.instagram_url))}" target="_blank" rel="noopener">INSTAGRAM</a>` : ""}
+            ${row.website_url ? `<a href="${escapeHtml(url(row.website_url))}" target="_blank" rel="noopener">WEBSITE</a>` : ""}
+          </div>
+        </div>
+        ${row.status === "pending" ? `<div style="display:flex;flex-direction:column;gap:8px"><button class="primary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','approved')">APPROVE</button><button class="secondary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','rejected')">REJECT</button></div>` : ""}
+      </div>`).join("") : `<div class="small">No submissions yet.</div>`;
+  }
+
+  if (artistsResult.error) {
+    if (artistsEl) artistsEl.innerHTML = `<div class="small">Could not load artists: ${escapeHtml(artistsResult.error.message)}</div>`;
+  } else {
+    const rows = Array.isArray(artistsResult.data) ? artistsResult.data : [];
+    if (artistsEl) artistsEl.innerHTML = rows.length ? rows.map(row => `
+      <div class="panel-row" style="align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div>
+          <div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
+          <div class="small">${escapeHtml((row.categories || []).join(", "))}</div>
+        </div>
+        <button class="secondary" onclick="adminDeleteArtist('${escapeHtml(row.id)}')">REMOVE</button>
+      </div>`).join("") : `<div class="small">No artists in the database.</div>`;
+  }
+}
+
+async function adminReviewSubmission(submissionId, decision) {
+  if (!isFiveAdmin || adminBusy) return;
+  if (!["approved", "rejected"].includes(decision)) return;
+  const row = decision === "approved" ? "Approve this artist and add them to the public pool?" : "Reject this submission?";
+  if (!window.confirm(row)) return;
+  adminBusy = true;
+  try {
+    const { error } = await supabaseClient.rpc("admin_review_submission", {
+      p_submission_id: submissionId,
+      p_decision: decision
+    });
+    if (error) throw error;
+    adminNotice(decision === "approved" ? "Artist approved and added to the database." : "Submission rejected.", "success");
+    await loadAdminData();
+    await loadHomeData();
+  } catch (error) {
+    adminNotice(error.message || "Could not update this submission.", "error");
+  } finally {
+    adminBusy = false;
+  }
+}
+
+async function adminAddArtist() {
+  if (!isFiveAdmin || adminBusy) return;
+  const name = $("adminArtistName")?.value.trim();
+  const country = $("adminArtistCountry")?.value.trim();
+  if (!name || !country) return adminNotice("Artist name and country are required.", "error");
+  const categories = ($("adminArtistCategories")?.value || "").split(",").map(x => x.trim()).filter(Boolean);
+  adminBusy = true;
+  setButton("adminAddButton", true, "ADDING...");
+  try {
+    const { error } = await supabaseClient.rpc("admin_add_artist", {
+      p_name: name,
+      p_country: country,
+      p_instagram_url: url($("adminArtistInstagram")?.value) || null,
+      p_website_url: url($("adminArtistWebsite")?.value) || null,
+      p_image_url: url($("adminArtistImage")?.value) || null,
+      p_categories: categories
+    });
+    if (error) throw error;
+    ["adminArtistName","adminArtistCountry","adminArtistInstagram","adminArtistWebsite","adminArtistImage","adminArtistCategories"].forEach(id => { if ($(id)) $(id).value = ""; });
+    adminNotice("Artist added and approved.", "success");
+    await loadAdminData();
+    await loadHomeData();
+  } catch (error) {
+    adminNotice(error.message || "Could not add artist.", "error");
+  } finally {
+    adminBusy = false;
+    setButton("adminAddButton", false);
+  }
+}
+
+async function adminDeleteArtist(artistId) {
+  if (!isFiveAdmin || adminBusy) return;
+  if (!window.confirm("Remove this artist from the active artist database? Existing call history will be preserved.")) return;
+  adminBusy = true;
+  try {
+    const { data: removalResult, error } = await supabaseClient.rpc("admin_remove_artist", { p_artist_id: artistId });
+    if (error) throw error;
+    adminNotice(removalResult === "archived" ? "Artist removed from the active pool. Historical votes were preserved." : "Artist permanently removed from the database.", "success");
+    await loadAdminData();
+    await loadHomeData();
+  } catch (error) {
+    adminNotice(error.message || "Could not remove artist.", "error");
+  } finally {
+    adminBusy = false;
+  }
+}
+
 async function init() {
   if (!window.FIVE_SUPABASE_URL || !window.FIVE_SUPABASE_KEY) {
     return authView("Supabase configuration is missing.");
@@ -590,10 +799,12 @@ async function init() {
   supabaseClient.auth.onAuthStateChange((_event, session) => {
     currentSession = session;
     loadMyCalls().then(updateAuthUI);
+    refreshAdminAccess();
   });
 
   await loadMyCalls();
   updateAuthUI();
+  await refreshAdminAccess();
   home();
 }
 
@@ -615,5 +826,10 @@ window.chooseProfile=chooseProfile;
 window.choose=choose;
 window.sendSubmission=sendSubmission;
 window.shareEye=shareEye;
+window.openAdmin=openAdmin;
+window.loadAdminData=loadAdminData;
+window.adminReviewSubmission=adminReviewSubmission;
+window.adminAddArtist=adminAddArtist;
+window.adminDeleteArtist=adminDeleteArtist;
 
 init();
