@@ -23,9 +23,13 @@ function show(id) {
 function message(id, text, type = "") {
   const el = $(id);
   if (!el) return;
-  el.textContent = text || "";
+  const originalText = String(text || "");
+  const displayText = /daily limit/i.test(originalText) && /new york|calendar day/i.test(originalText)
+    ? "Daily limit reached. You can make up to 10 calls per day. Try again tomorrow."
+    : originalText;
+  el.textContent = displayText;
   el.className = "message" + (type ? " " + type : "");
-  el.classList.toggle("hidden", !text);
+  el.classList.toggle("hidden", !displayText);
 }
 
 function escapeHtml(v) {
