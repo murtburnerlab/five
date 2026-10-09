@@ -7,6 +7,11 @@
   style.textContent = `
     #fiveAccountPanel{margin-top:22px;border-top:1px solid #111;padding-top:20px}
     #fiveAccountPanel[hidden]{display:none!important}
+    #fiveAccountPanel .five-account-summary{margin:24px 0;border:1px solid #d6d2ca;padding:18px}
+    #fiveAccountPanel .five-account-row{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #d6d2ca}
+    #fiveAccountPanel .five-account-row span{font-size:10px;letter-spacing:.12em;color:#77736c}
+    #fiveAccountPanel .five-account-row strong{font-size:16px;font-weight:500;text-align:right;overflow-wrap:anywhere}
+    #fiveAccountPanel .five-account-note{font-size:12px;line-height:1.5;color:#77736c;margin:18px 0 0}
     #fiveAccountPanel .five-account-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#77736c}
     #fiveAccountPanel .five-account-email{font-size:16px;overflow-wrap:anywhere;margin:10px 0 18px}
     #fiveAccountPanel button{min-height:52px;border:1px solid #111;background:transparent;padding:14px 18px;font:10px Arial,Helvetica,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
@@ -22,6 +27,13 @@
   panel.innerHTML = `
     <div class="five-account-label">SIGNED IN</div>
     <div class="five-account-email" id="fiveAccountEmail"></div>
+    <div class="five-account-summary">
+      <div class="five-account-row"><span>YOUR CALLS</span><strong id="homeCalls">0</strong></div>
+      <div class="five-account-row"><span>ACTIVE CALLS</span><strong id="homeActive">0</strong></div>
+      <div class="five-account-row"><span>NEXT UNLOCK</span><strong id="homeUnlock">10 calls → YOUR EYE</strong></div>
+      <div class="five-account-row"><span>DAILY FIVE</span><strong>Available</strong></div>
+      <p class="five-account-note">Your scores are based on your choices inside FIVE. This prototype uses simulated artist movement; production data will come from real user choices.</p>
+    </div>
     <button type="button" id="fiveAccountSignOut">SIGN OUT</button>
     <div class="five-account-message" id="fiveAccountMessage" role="status"></div>
   `;
@@ -51,6 +63,8 @@
     if (emailEl) emailEl.textContent = user?.email || "Signed in with a social account";
     const nav = document.getElementById("authNav");
     if (nav) nav.textContent = signedIn ? "ACCOUNT" : "SIGN IN";
+    const title = document.getElementById("authTitle");
+    if (title) title.textContent = signedIn ? "ACCOUNT" : "SIGN IN";
     const counter = document.getElementById("counter");
     if (counter) counter.textContent = signedIn ? (user.email || "SIGNED IN") : "SIGNED OUT";
 

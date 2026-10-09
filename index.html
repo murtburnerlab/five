@@ -40,20 +40,20 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <div class="counter" id="counter">SIGNED OUT</div>
 </header>
 <main>
-<section id="home" class="view home">
-<div>
-<div class="eyebrow">A people-powered artist discovery platform</div>
-<div class="home-title">HOW GOOD<br>IS YOUR EYE?</div>
-<div class="home-sub">Five artists. One choice. Build a record of what you see before everyone else does.</div>
-<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button><button class="secondary" onclick="eye()">YOUR EYE</button></div>
+<section id="home" class="view home home-v2">
+<div class="hero-copy">
+<div class="eyebrow">GLOBAL ARTIST DISCOVERY</div>
+<div class="home-title">DISCOVER.<br>CHOOSE.<br>RANK.</div>
+<div class="home-sub">A global ranking shaped by real choices.</div>
+<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button></div>
 </div>
-<div class="home-panel">
-<div class="panel-row"><div class="panel-label">Account</div><div class="panel-value" id="homeAuth">Signed out</div></div>
-<div class="panel-row"><div class="panel-label">Your calls</div><div class="panel-value" id="homeCalls">0</div></div>
-<div class="panel-row"><div class="panel-label">Active calls</div><div class="panel-value" id="homeActive">0</div></div>
-<div class="panel-row"><div class="panel-label">Next unlock</div><div class="panel-value" id="homeUnlock">10 calls → YOUR EYE</div></div>
-<div class="panel-row"><div class="panel-label">Daily Five</div><div class="panel-value">Available</div></div>
-<p class="small" style="margin-top:20px">Your scores are based on your choices inside FIVE. This prototype uses simulated artist movement; production data will come from real user choices.</p>
+<div class="home-data">
+<div class="global-stats">
+<div class="stat"><div class="panel-label">ARTISTS</div><div class="stat-value" id="globalArtists">—</div></div>
+<div class="stat"><div class="panel-label">CHOICES</div><div class="stat-value" id="globalChoices">—</div></div>
+</div>
+<div class="home-ranking-head"><span>GLOBAL TOP 5</span><button class="text-button" onclick="rankings()">VIEW FULL RANKING</button></div>
+<div id="homeTopFive" class="home-top-five"><div class="small">Loading live ranking…</div></div>
 </div>
 </section>
 
