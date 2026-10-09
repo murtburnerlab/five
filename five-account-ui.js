@@ -110,13 +110,11 @@
     <div class="five-account-summary">
       <div class="five-account-row"><span>YOUR CALLS</span><strong id="homeCalls">0</strong></div>
       <div class="five-account-row"><span>CALLS TODAY</span><strong id="fiveCallsToday">0 / 10</strong></div>
-      <p class="five-account-note" id="fiveDailyNote">Daily limit: 10 recorded PLAY votes per New York calendar day.</p>
+      <p class="five-account-note" id="fiveDailyNote">10 PLAY calls allowed per day.</p>
       <div class="five-account-row"><span>NEXT UNLOCK</span><strong id="homeUnlock">10 calls → YOUR EYE</strong></div>
       <div class="five-account-progress" aria-label="Progress to next unlock"><span id="fiveUnlockProgress"></span></div>
       <div class="five-unlock-status" id="fiveUnlockStatus">First milestone</div>
       <p class="five-account-note" id="fiveUnlockNote">Reach 10 real calls to unlock your personal choice-history summary in YOUR EYE.</p>
-      <div class="five-account-row"><span>DAILY FIVE</span><strong>Not active yet</strong></div>
-      <p class="five-account-note">DAILY FIVE is planned as a daily set of five artists. It is not playable yet, gives no extra votes, and does not bypass the 10-call daily limit.</p>
     </div>
     <div class="five-account-actions">
       <button type="button" id="fiveAccountSignOut">SIGN OUT</button>
@@ -244,10 +242,10 @@
     if (dailyNote) {
       dailyNote.classList.toggle("warning", todayCount >= 10);
       dailyNote.textContent = todayCount > 10
-        ? "Daily limit reached. Your older history contains more than 10 calls today; new PLAY calls stay blocked until the New York calendar day resets."
+        ? "Daily limit reached. You can make more PLAY calls tomorrow."
         : todayCount === 10
-          ? "Daily limit reached. You can make more PLAY calls after the New York calendar day resets."
-          : `${10 - todayCount} PLAY call${10 - todayCount === 1 ? "" : "s"} remaining today (New York time).`;
+          ? "Daily limit reached. You can make more PLAY calls tomorrow."
+          : `${10 - todayCount} PLAY call${10 - todayCount === 1 ? "" : "s"} remaining today.`;
     }
     renderUnlocks(total);
   }
