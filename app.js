@@ -142,19 +142,40 @@ async function loadHomeData() {
   const list = $("homeTopFive");
   const artistsEl = $("globalArtists");
   const choicesEl = $("globalChoices");
+
   if (list) list.innerHTML = `<div class="small">Loading live ranking…</div>`;
+
+  // Global counters use a dedicated public RPC so they do not depend on
+  // the ranking rows being returned or on the ranking request succeeding.
+  const statsRequest = supabaseClient.rpc("get_public_stats")
+    .then(({ data, error }) => {
+      if (error) throw error;
+      const stats = Array.isArray(data) ? data[0] : data;
+      if (artistsEl) artistsEl.textContent = String(stats?.approved_artists ?? 0);
+      if (choicesEl) choicesEl.textContent = String(stats?.total_choices ?? 0);
+    })
+    .catch(error => {
+      if (artistsEl) artistsEl.textContent = "—";
+      if (choicesEl) choicesEl.textContent = "—";
+      console.error("Could not load FIVE global stats:", error);
+    });
+
   try {
     const { data, error } = await supabaseClient.rpc("get_public_rankings");
     if (error) throw error;
     const rows = Array.isArray(data) ? data : [];
-    if (artistsEl) artistsEl.textContent = String(rows.length);
-    const totalChoices = rows.reduce((sum, row) => sum + Number(row.choices || 0), 0);
-    if (choicesEl) choicesEl.textContent = String(totalChoices);
-    if (!list) return;
-    if (!rows.length) {
-      list.innerHTML = `<div class="small" style="padding:15px 0">No public calls recorded yet.</div>`;
+
+    if (!list) {
+      await statsRequest;
       return;
     }
+
+    if (!rows.length) {
+      list.innerHTML = `<div class="small" style="padding:15px 0">No public calls recorded yet.</div>`;
+      await statsRequest;
+      return;
+    }
+
     list.innerHTML = rows.slice(0, 5).map((row, i) => `
       <div class="home-rank-row">
         <div class="home-rank-num">#${escapeHtml(row.rank ?? i + 1)}</div>
@@ -163,10 +184,10 @@ async function loadHomeData() {
         <div class="home-rank-choices">${Number(row.choices || 0)} choices</div>
       </div>`).join("");
   } catch (error) {
-    if (artistsEl) artistsEl.textContent = "—";
-    if (choicesEl) choicesEl.textContent = "—";
     if (list) list.innerHTML = `<div class="small" style="padding:15px 0">Ranking unavailable. ${escapeHtml(error?.message || "Please refresh.")}</div>`;
   }
+
+  await statsRequest;
 }
 
 function normalizeArtist(row, roundId) {
