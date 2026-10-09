@@ -23,12 +23,10 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 .site-footer{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:22px 0 30px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px}.site-footer button,.site-footer a{border:0;background:none;padding:0;color:#111;font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
 @media(max-width:850px){.home{grid-template-columns:1fr;gap:45px}.grid{grid-template-columns:1fr 1fr}.card{min-height:280px}.call-card{grid-template-columns:55px 1fr 100px}.call-card .status{grid-column:2/4}.eye-grid{grid-template-columns:1fr}.eye-two{grid-template-columns:1fr}.rank-row{grid-template-columns:50px 1fr 90px}.rank-row .rank-choice{grid-column:3}}
 @media(max-width:520px){header{height:68px;padding:0 14px;gap:12px}.topnav{gap:13px;font-size:10px}.counter{display:none}main{padding:28px 15px 48px}.grid{grid-template-columns:1fr}.card{min-height:210px}.home-title{font-size:76px}.home{gap:36px;min-height:auto}.home-sub{font-size:17px}.stat-value{font-size:48px}.home-ranking-head{align-items:flex-start}.home-rank-name{font-size:14px}.site-footer{width:calc(100% - 30px);padding:20px 0 28px}.section-title{font-size:54px}.call-card{grid-template-columns:48px 1fr}.call-card .movement{grid-column:2;text-align:left}.call-card .status{grid-column:2}.rank-row{grid-template-columns:40px 1fr}.rank-row .rank-choice{grid-column:2;text-align:left}.rank-row .rank-choice:before{content:'CHOICES  '}}
-
 .home-panel{border:1px solid var(--line);padding:22px;align-self:start}
 .panel-row{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:16px 0;border-bottom:1px solid var(--line)}
 .panel-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
 .panel-value{font-size:16px;text-align:right;overflow-wrap:anywhere}
-
 #roundLabel{display:none!important}
 </style>
 </head>
@@ -57,7 +55,6 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <div id="homeTopFive" class="home-top-five"><div class="small">Loading live ranking…</div></div>
 </div>
 </section>
-
 <section id="auth" class="view auth hidden">
 <div class="eyebrow">ACCOUNT</div><div class="section-title" id="authTitle">SIGN IN</div>
 <p class="submit-note" id="authCopy">Sign in to make calls, submit artists, and build your record.</p>
@@ -68,24 +65,20 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </div>
 <div class="auth-actions"><button class="primary" id="authSubmit" onclick="submitAuth()">SIGN IN</button><button class="secondary" id="authModeSwitch" onclick="toggleAuthMode()">CREATE ACCOUNT</button><button class="secondary hidden" id="signOutButton" onclick="signOut()">SIGN OUT</button></div>
 </section>
-
 <section id="play" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">DISCOVER</div><div class="section-title">MAKE YOUR CALL</div></div><div class="round" id="roundLabel">ROUND 01</div></div>
 <div id="playMessage" class="message hidden"></div><div id="grid" class="grid"></div>
 </section>
-
 <section id="result" class="view hidden"><div class="result-wrap">
 <div class="result-kicker">CALL RECORDED</div><div class="result-name" id="chosen">Murt Burner</div><div class="result-meta" id="chosenMeta">Ukraine</div>
 <div class="call-box"><div class="call-line"><span>STATUS</span><strong id="resultStatus">DEVELOPING</strong></div><div class="call-line"><span>YOUR CALL</span><strong id="resultRank">#—</strong></div><div class="call-line"><span>NEXT CHECK</span><strong id="nextCheck">Make another call</strong></div></div>
 <div class="result-actions"><button class="primary" onclick="nextRound()">NEXT FIVE</button><button class="secondary" onclick="viewCalls()">SEE MY CALLS</button></div>
 </div></section>
-
 <section id="calls" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">YOUR HISTORY</div><div class="section-title">YOUR CALLS</div></div><div class="round" id="activeLabel">0 ACTIVE</div></div>
 <div id="callsMessage" class="message hidden"></div><div id="callsList" class="cards-list"></div>
 <p class="demo-note">Calls shown here come from Supabase when the signed-in account is allowed to read them. No simulated movement is shown.</p>
 </section>
-
 <section id="eye" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">YOUR SIGNAL</div><div class="section-title">YOUR EYE</div></div><div class="round" id="eyeCount">0 CALLS</div></div>
 <div id="eyeIntro" class="report"><div class="eyebrow">BUILDING</div><h3 id="eyeHeadline">Your eye is starting to form.</h3><div class="small" id="eyeCopy">Make 10 calls to unlock your first measurable signal.</div></div>
@@ -95,14 +88,10 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <div class="report"><div class="eyebrow">BEST CALL</div><h3 id="bestCall">—</h3><div class="small" id="bestCallCopy">Make more calls to build your history.</div><div class="share"><button class="primary" onclick="shareEye()">SHARE YOUR EYE</button></div></div>
 </div>
 </section>
-
-
-
 <section id="rankings" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">PUBLIC RANKING</div><div class="section-title">ARTISTS</div></div><div class="round" id="rankingLabel">REAL DATA</div></div>
 <div id="rankingMessage" class="message hidden"></div><div id="rankList" class="rank-list"></div>
 </section>
-
 <section id="submit" class="view submit hidden">
 <div class="eyebrow">DATABASE</div><div class="section-title">SUBMIT<br>AN ARTIST</div>
 <p class="submit-note">FIVE reviews submissions before adding an artist to the public database.</p>
@@ -112,9 +101,8 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </section>
 </main>
 <footer class="site-footer"><button onclick="submitArtist()">SUBMIT ARTIST</button><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
-
 <div id="modal" class="modal hidden" onclick="closeProfile()"><div class="modalbox" onclick="event.stopPropagation()"><div class="modaltop"><div class="eyebrow">ARTIST PROFILE</div><button class="close" onclick="closeProfile()">×</button></div><h2 id="profileName"></h2><div id="profileCountry" class="small"></div><p id="profileCopy"></p><a id="profileInstagram" href="#" target="_blank" rel="noopener" class="hidden">OPEN INSTAGRAM</a><a id="profileWebsite" href="#" target="_blank" rel="noopener" class="hidden">OPEN WEBSITE</a><br><button class="primary" id="profileChoose" onclick="chooseProfile()">CHOOSE THIS ARTIST</button></div></div>
-<script src="./app.js?v=20261009-daily-limit-fix5"></script>
+<script src="./app.js?v=20261009-history-paging1"></script>
 <script>function toggleAuthMode(){const b=document.getElementById("authModeSwitch");const toSignup=b.textContent.trim()==="CREATE ACCOUNT";setAuthMode(toSignup?"signup":"signin");b.textContent=toSignup?"BACK TO SIGN IN":"CREATE ACCOUNT";}</script>
 <script src="./five-auth-buttons.js"></script>
 <script src="./five-account-ui.js?v=20261009-ranks-fix2"></script>
