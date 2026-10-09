@@ -65,13 +65,18 @@
     .five-modal input:focus{border-color:#1685ff;box-shadow:0 0 0 1px #1685ff}
     .five-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
     .five-modal-actions button{
-      min-height:54px;padding:14px 10px;border:1px solid #111;
-      background:transparent;color:#111;font-size:11px;
+      appearance:none;-webkit-appearance:none;box-sizing:border-box;
+      display:flex;align-items:center;justify-content:center;
+      width:100%;min-height:54px;padding:14px 10px;
+      border:1px solid #111!important;background:transparent;color:#111;
+      font-family:Arial,Helvetica,sans-serif;font-size:11px;
       letter-spacing:.12em;text-transform:uppercase;font-weight:600;
-      cursor:pointer;border-radius:0
+      cursor:pointer;border-radius:0!important;box-shadow:none!important
     }
     .five-modal-actions button:disabled{opacity:.5;cursor:wait}
-    .five-modal-actions .five-modal-danger{background:#8a3e37;color:#fff;border-color:#8a3e37}
+    .five-modal-actions button:first-child{border-radius:0!important}
+    .five-modal-actions button:last-child{border-radius:0!important}
+    .five-modal-actions .five-modal-danger{background:#8a3e37!important;color:#fff;border-color:#8a3e37!important;border-radius:0!important}
     .five-modal-error{color:#8a3e37;font-size:12px;line-height:1.4;margin:0 0 12px}
     @media(max-width:420px){
       .five-modal{padding:22px 20px 20px}
@@ -104,7 +109,7 @@
     <div class="five-account-email" id="fiveAccountEmail"></div>
     <div class="five-account-summary">
       <div class="five-account-row"><span>YOUR CALLS</span><strong id="homeCalls">0</strong></div>
-      <div class="five-account-row"><span>CALLS LEFT TODAY</span><strong id="fiveCallsToday">0 / 10</strong></div>
+      <div class="five-account-row"><span>CALLS TODAY</span><strong id="fiveCallsToday">0 / 10</strong></div>
       <p class="five-account-note" id="fiveDailyNote">Daily limit: 10 recorded PLAY votes per New York calendar day.</p>
       <div class="five-account-row"><span>NEXT UNLOCK</span><strong id="homeUnlock">10 calls → YOUR EYE</strong></div>
       <div class="five-account-progress" aria-label="Progress to next unlock"><span id="fiveUnlockProgress"></span></div>
@@ -234,7 +239,7 @@
       }).format(new Date(call.created_at)) === today;
     }).length;
     document.getElementById("homeCalls").textContent = String(total);
-    document.getElementById("fiveCallsToday").textContent = `${Math.max(0, 10 - todayCount)} / 10`;
+    document.getElementById("fiveCallsToday").textContent = `${Math.min(todayCount, 10)} / 10`;
     const dailyNote = document.getElementById("fiveDailyNote");
     if (dailyNote) {
       dailyNote.classList.toggle("warning", todayCount >= 10);
