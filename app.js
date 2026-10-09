@@ -195,7 +195,10 @@ async function newRound() {
 
   if (error) {
     $("roundLabel").textContent = "LIMIT REACHED";
-    const safeMessage = String(error.message || "Please try again tomorrow.").replace(/calendar day/gi, "day").replace(/\s{2,}/g, " ");
+    const rawMessage = String(error.message || "Please try again tomorrow.").replace(/\s{2,}/g, " ");
+    const safeMessage = /daily limit|new york|calendar day/i.test(rawMessage)
+      ? "Daily limit reached. You can make up to 10 calls per day. Try again tomorrow."
+      : rawMessage;
     return message("playMessage", safeMessage, "error");
   }
 
