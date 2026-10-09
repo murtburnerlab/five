@@ -1,0 +1,25 @@
+*** Begin Patch
+*** Update File: five-account-ui.js
+@@
+-  function renderUnlocks(total, userId) {
++  function renderUnlocks(total, userId, allowAchievementPopup = false) {
+@@
+-        if (fresh) { seen.push(fresh.count); try { localStorage.setItem(seenKey, JSON.stringify(seen)); } catch (_) {} showAchievement(fresh); }
++        if (allowAchievementPopup && fresh) { seen.push(fresh.count); try { localStorage.setItem(seenKey, JSON.stringify(seen)); } catch (_) {} showAchievement(fresh); }
+@@
+-      if (fresh) {
++      if (allowAchievementPopup && fresh) {
+@@
+-  async function refreshStats(userId) {
++  async function refreshStats(userId, allowAchievementPopup = false) {
+@@
+-    renderUnlocks(total, userId);
++    renderUnlocks(total, userId, allowAchievementPopup);
+@@
+-    if (data.session?.user) await refreshStats(data.session.user.id);
+-  });
+-  const observer
++    if (data.session?.user) await refreshStats(data.session.user.id, true);
++  });
++  const observer
+*** End Patch
