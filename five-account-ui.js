@@ -13,19 +13,72 @@
     #fiveAccountPanel .five-account-row strong{font-size:16px;font-weight:500;text-align:right;overflow-wrap:anywhere}
     #fiveAccountPanel .five-account-note{font-size:12px;line-height:1.5;color:#77736c;margin:18px 0 0}
     #fiveAccountPanel .five-account-note.warning{color:#7a3535}
-    .five-modal-backdrop{position:fixed;inset:0;z-index:99999;background:rgba(17,17,17,.58);display:flex;align-items:center;justify-content:center;padding:22px}
+    .five-modal-backdrop{
+      position:fixed;inset:0;z-index:99999;
+      display:flex;align-items:center;justify-content:center;
+      padding:22px 18px calc(22px + env(safe-area-inset-bottom));
+      background:rgba(16,16,16,.72);backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      opacity:1;transition:opacity .18s ease;
+    }
     .five-modal-backdrop[hidden]{display:none!important}
-    .five-modal{width:min(100%,460px);background:#f0eee8;color:#111;border:1px solid #d6d2ca;padding:24px}
-    .five-modal .five-modal-kicker{font-size:10px;letter-spacing:.16em;color:#77736c;text-transform:uppercase;margin-bottom:14px}
-    .five-modal h2{font-size:28px;line-height:1.02;letter-spacing:-.04em;margin:0 0 16px;text-transform:uppercase}
-    .five-modal p{font-size:14px;line-height:1.5;color:#514f4a;margin:0 0 12px}
-    .five-modal .five-modal-warning{padding:14px;border:1px solid #9b4942;color:#74352f;margin:16px 0;font-size:13px;line-height:1.5}
-    .five-modal input{width:100%;box-sizing:border-box;background:transparent;border:1px solid #8e8a82;padding:14px;font:16px Arial,sans-serif;margin:8px 0 18px;color:#111}
-    .five-modal-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .five-modal-actions button{flex:1;min-width:120px}
+    .five-modal{
+      width:min(100%,430px);max-height:calc(100dvh - 44px);
+      overflow:auto;background:#f1efe9;color:#111;
+      border:1px solid #c9c5bc;padding:26px 24px 22px;
+      box-shadow:0 24px 80px rgba(0,0,0,.24);
+      animation:fiveModalIn .2s ease-out;
+    }
+    @keyframes fiveModalIn{
+      from{opacity:0;transform:translateY(12px) scale(.985)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+    .five-modal .five-modal-kicker{
+      display:flex;align-items:center;gap:10px;
+      font-size:10px;letter-spacing:.18em;color:#77736c;
+      text-transform:uppercase;margin-bottom:24px
+    }
+    .five-modal .five-modal-kicker:before{
+      content:"";display:block;width:24px;height:3px;background:#1685ff
+    }
+    .five-modal h2{
+      font-size:clamp(30px,8vw,42px);line-height:.94;
+      letter-spacing:-.055em;margin:0 0 18px;text-transform:uppercase;
+      font-weight:800;max-width:330px
+    }
+    .five-modal p{font-size:14px;line-height:1.55;color:#514f4a;margin:0 0 14px}
+    .five-modal .five-modal-warning{
+      padding:16px 0;border-top:1px solid #c9c5bc;
+      border-bottom:1px solid #c9c5bc;color:#7b3933;
+      margin:20px 0;font-size:13px;line-height:1.55
+    }
+    .five-modal .five-modal-warning:before{
+      content:"IMPORTANT";display:block;font-size:9px;letter-spacing:.16em;
+      font-weight:700;margin-bottom:8px;color:#7b3933
+    }
+    .five-modal input{
+      width:100%;box-sizing:border-box;background:#f8f7f3;
+      border:1px solid #aaa69d;border-radius:0;padding:15px;
+      font:16px Arial,sans-serif;margin:8px 0 18px;color:#111;
+      outline:none;min-height:52px
+    }
+    .five-modal input:focus{border-color:#1685ff;box-shadow:0 0 0 1px #1685ff}
+    .five-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+    .five-modal-actions button{
+      min-height:54px;padding:14px 10px;border:1px solid #111;
+      background:transparent;color:#111;font-size:11px;
+      letter-spacing:.12em;text-transform:uppercase;font-weight:600;
+      cursor:pointer;border-radius:0
+    }
+    .five-modal-actions button:disabled{opacity:.5;cursor:wait}
     .five-modal-actions .five-modal-danger{background:#8a3e37;color:#fff;border-color:#8a3e37}
     .five-modal-error{color:#8a3e37;font-size:12px;line-height:1.4;margin:0 0 12px}
-    @media(max-width:420px){.five-modal{padding:20px}.five-modal h2{font-size:25px}}
+    @media(max-width:420px){
+      .five-modal{padding:22px 20px 20px}
+      .five-modal .five-modal-kicker{margin-bottom:20px}
+      .five-modal-actions{grid-template-columns:1fr}
+      .five-modal-actions button{min-height:50px}
+    }
     #fiveAccountPanel .five-account-note.warning{color:#7a3535}
     #fiveAccountPanel .five-unlock-status{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#1685ff;margin-top:14px}
     #fiveAccountPanel .five-account-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#77736c}
@@ -76,7 +129,7 @@
       <div class="five-modal-kicker">ACCOUNT CONTROL</div>
       <h2 id="fiveDeleteTitle">Delete account?</h2>
       <p id="fiveDeleteIntro">You are about to permanently delete your FIVE account.</p>
-      <div class="five-modal-warning" id="fiveDeleteWarning">Your progress and unlocked milestones will be lost. Every vote you made will be removed from the artists’ totals and may change their rankings.</div>
+      <div class="five-modal-warning" id="fiveDeleteWarning">Your progress, call history, and unlocked milestones will be permanently lost. Every vote you made will be removed from artists’ totals, so their vote counts and rankings may change.</div>
       <p id="fiveDeleteStep">This cannot be undone.</p>
       <input id="fiveDeleteInput" type="text" autocomplete="off" autocapitalize="characters" placeholder="Type DELETE to confirm" hidden />
       <div class="five-modal-error" id="fiveDeleteError" hidden></div>
@@ -230,7 +283,7 @@
   function openDeleteModal() {
     deleteStep = 1;
     modalTitle.textContent = "DELETE ACCOUNT?";
-    modalIntro.textContent = "You are about to permanently delete your FIVE account and all associated personal data.";
+    modalIntro.textContent = "This permanently removes your FIVE account and its personal data.";
     modalStep.textContent = "Review the consequences. You will confirm again before deletion starts.";
     modalInput.hidden = true;
     modalInput.value = "";
@@ -254,7 +307,7 @@
     if (deleteStep === 1) {
       deleteStep = 2;
       modalTitle.textContent = "CONFIRM DELETION";
-      modalIntro.textContent = "This action cannot be undone. FIVE cannot restore your account or vote history.";
+      modalIntro.textContent = "This cannot be undone. Your progress and unlocked milestones will be lost, and removing your votes can change artists’ totals and rankings.";
       modalStep.textContent = "Type DELETE below to confirm. Your votes will be removed from artist totals, which can change rankings.";
       modalInput.hidden = false;
       modalContinue.textContent = "DELETE ACCOUNT";
