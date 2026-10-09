@@ -184,7 +184,7 @@
         const seenKey=`five-achievements-seen:${userId}`;let seen=[];
         try{seen=JSON.parse(localStorage.getItem(seenKey)||"[]");}catch(_){}
         const fresh=fiveMilestones.filter(item=>total>=item.count).find(item=>!seen.includes(item.count));
-        if(fresh){seen.push(fresh.count);try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}if(allowPopup)showAchievement(fresh);}
+        if(fresh && allowPopup){seen.push(fresh.count);try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}showAchievement(fresh);}
       }
       return;
     }
@@ -197,7 +197,7 @@
       const unlocked=fiveMilestones.filter(item=>total>=item.count),seenKey=`five-achievements-seen:${userId}`;let seen=[];
       try{seen=JSON.parse(localStorage.getItem(seenKey)||"[]");}catch(_){}
       const fresh=unlocked.find(item=>!seen.includes(item.count));
-      if(fresh){seen.push(fresh.count);try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}if(allowPopup)showAchievement(fresh);}
+      if(fresh && allowPopup){seen.push(fresh.count);try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}showAchievement(fresh);}
     }
   }
 
@@ -215,7 +215,9 @@
   async function refreshStats(userId,allowPopup=false) {
     const {data,error}=await client.from("calls").select("id,created_at,mode").eq("user_id",userId).order("created_at",{ascending:false}).limit(1000);
     if(error){say("Could not load your call history: "+error.message);document.getElementById("homeCalls").textContent="—";document.getElementById("fiveCallsToday").textContent="— / 10";return;}
-    const calls=data||[],playCalls=calls.filter(call=>!call.mode||call.mode==="play"),total=playCalls.length;
+    const {count: exactTotal, error: countError}=await client.from("calls").select("id",{count:"exact",head:true}).eq("user_id",userId).or("mode.is.null,mode.eq.play");
+    if(countError){say("Could not verify your lifetime call count: "+countError.message);document.getElementById("homeCalls").textContent="—";return;}
+    const calls=data||[],playCalls=calls.filter(call=>!call.mode||call.mode==="play"),total=Number(exactTotal||0);
     const today=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
     const todayCount=playCalls.filter(call=>{if(!call.created_at)return false;return new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(call.created_at))===today;}).length;
     document.getElementById("homeCalls").textContent=String(total);document.getElementById("fiveCallsToday").textContent=`${Math.min(todayCount,10)} / 10`;
