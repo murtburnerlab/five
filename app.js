@@ -13,6 +13,7 @@ let currentRound = null;
 let profileIndex = -1;
 let myCalls = [];
 let busy = false;
+let callsLoading = false;
 
 function show(id) {
   views.forEach(v => $(v)?.classList.add("hidden"));
@@ -55,16 +56,25 @@ function setButton(id, disabled, text) {
   b.textContent = disabled ? text : b.dataset.original;
 }
 
+function playCallCount(calls = myCalls) {
+  return calls.filter(c => (c.mode || "play") === "play").length;
+}
+
 function updateAuthUI() {
   const ok = signedIn();
   if ($("authNav")) $("authNav").textContent = ok ? "ACCOUNT" : "SIGN IN";
   if ($("counter")) $("counter").textContent = ok ? (currentSession.user.email || "SIGNED IN") : "SIGNED OUT";
   if ($("homeAuth")) $("homeAuth").textContent = ok ? (currentSession.user.email || "Signed in") : "Signed out";
-  if ($("homeCalls")) $("homeCalls").textContent = ok ? String(myCalls.filter(c => (c.mode || "play") === "play").length) : "Sign in";
+  if ($("homeCalls")) $("homeCalls").textContent = ok ? String(playCallCount()) : "Sign in";
   if ($("homeActive")) $("homeActive").textContent = ok ? "0" : "—";
   if ($("homeUnlock")) {
-    const count = myCalls.filter(c => (c.mode || "play") === "play").length;
-    $("homeUnlock").textContent = count >= 10 ? "YOUR EYE unlocked" : `${10-count} calls → YOUR EYE`;
+    const count = playCallCount();
+    const next = [10,25,50,100,250,500,1000,3000,5000].find(n => count < n);
+    $("homeUnlock").textContent = next ? `${next-count} calls → ${({
+      10:"YOUR EYE",25:"EXPLORER SIGNAL",50:"TASTE PROFILE",100:"FIVE INSIDER",
+      250:"COLLECTOR LEVEL",500:"FIVE ICON",1000:"TASTE AUTHORITY",
+      3000:"CULTURE SHAPER",5000:"FIVE LEGEND"
+    })[next]}` : "All milestones reached";
   }
   if ($("signOutButton")) $("signOutButton").classList.toggle("hidden", !ok);
   if ($("authPassword")) $("authPassword").disabled = ok;
@@ -293,30 +303,42 @@ async function choose(i) {
 function nextRound() { play(); }
 
 async function loadMyCalls() {
-  if (!signedIn()) {
-    myCalls = [];
+  if (!signedIn() || callsLoading) {
+    if (!signedIn()) myCalls = [];
     return;
   }
-
-  const { data, error } = await supabaseClient
-    .from("calls")
-    .select("id,created_at,rank_at_choice,artist_id,mode,artists(id,name,country,instagram_url,website_url)")
-    .eq("user_id", currentSession.user.id)
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  if (error) {
-    myCalls = [];
-    return;
+  callsLoading = true;
+  try {
+    const pageSize = 500;
+    let offset = 0;
+    const all = [];
+    while (true) {
+      const { data, error } = await supabaseClient
+        .from("calls")
+        .select("id,created_at,rank_at_choice,artist_id,mode,artists(id,name,country,instagram_url,website_url)")
+        .eq("user_id", currentSession.user.id)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (error) {
+        myCalls = [];
+        message("callsMessage", "Could not load your complete call history: " + error.message, "error");
+        return;
+      }
+      const batch = data || [];
+      all.push(...batch);
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+    }
+    myCalls = all;
+    updateAuthUI();
+  } finally {
+    callsLoading = false;
   }
-  myCalls = data || [];
-  updateAuthUI();
 }
 
-async function viewCalls() {
+function viewCalls() {
   if (!signedIn()) return authView("Sign in to see your calls.");
   show("calls");
-  await loadMyCalls();
   renderCalls();
 }
 
@@ -394,7 +416,6 @@ function renderEye() {
   const explorerRate = n ? Math.round(uniqueArtists / n * 100) : 0;
   const repeatRate = n ? Math.round(repeatedVotes / n * 100) : 0;
 
-  const unlockedMetrics = [];
   const metricCards = [
     {count:10, name:"YOUR EYE", value:`${uniqueArtists} artists`, copy:`Your personal choice history across ${n} recorded calls.`},
     {count:25, name:"EXPLORER SIGNAL", value:`${explorerRate}%`, copy:`Discovery breadth: ${uniqueArtists} different artists across ${n} calls.`},
@@ -406,21 +427,15 @@ function renderEye() {
     {count:3000, name:"CULTURE SHAPER", value:`${n} / 3,000`, copy:"Milestone rank for a substantial discovery history."},
     {count:5000, name:"FIVE LEGEND", value:`${n} / 5,000`, copy:"The highest currently defined FIVE milestone."}
   ];
-  metricCards.forEach(metric => {
-    if (n >= metric.count) {
-      unlockedMetrics.push(metric);
-    } else {
-      unlockedMetrics.push({
-        name: `${metric.name} · LOCKED`,
-        value: `${metric.count-n} to go`,
-        copy: `Reach ${metric.count} real calls to unlock this feature.`
-      });
-    }
-  });
-  $("metrics").innerHTML = unlockedMetrics.map(metric => `
-    <div class="metric"><div class="metric-name">${escapeHtml(metric.name)}</div>
-    <div class="metric-num">${escapeHtml(metric.value)}</div>
-    <div class="metric-copy">${escapeHtml(metric.copy)}</div></div>`).join("");
+  $("metrics").innerHTML = metricCards.map(metric => {
+    const unlocked = n >= metric.count;
+    const value = unlocked ? metric.value : `${metric.count-n} to go`;
+    const name = unlocked ? metric.name : `${metric.name} · LOCKED`;
+    const copy = unlocked ? metric.copy : `Reach ${metric.count} real calls to unlock this feature.`;
+    return `<div class="metric"><div class="metric-name">${escapeHtml(name)}</div>
+      <div class="metric-num">${escapeHtml(value)}</div>
+      <div class="metric-copy">${escapeHtml(copy)}</div></div>`;
+  }).join("");
 
   $("fiveList").innerHTML = preferences.length
     ? preferences.slice(0,5).map(artist => `<div class="five-item"><strong>${escapeHtml(artist.name)}</strong><span>${artist.count} call${artist.count === 1 ? "" : "s"}</span></div>`).join("")
