@@ -13,6 +13,20 @@
     #fiveAccountPanel .five-account-row strong{font-size:16px;font-weight:500;text-align:right;overflow-wrap:anywhere}
     #fiveAccountPanel .five-account-note{font-size:12px;line-height:1.5;color:#77736c;margin:18px 0 0}
     #fiveAccountPanel .five-account-note.warning{color:#7a3535}
+    .five-modal-backdrop{position:fixed;inset:0;z-index:99999;background:rgba(17,17,17,.58);display:flex;align-items:center;justify-content:center;padding:22px}
+    .five-modal-backdrop[hidden]{display:none!important}
+    .five-modal{width:min(100%,460px);background:#f0eee8;color:#111;border:1px solid #d6d2ca;padding:24px}
+    .five-modal .five-modal-kicker{font-size:10px;letter-spacing:.16em;color:#77736c;text-transform:uppercase;margin-bottom:14px}
+    .five-modal h2{font-size:28px;line-height:1.02;letter-spacing:-.04em;margin:0 0 16px;text-transform:uppercase}
+    .five-modal p{font-size:14px;line-height:1.5;color:#514f4a;margin:0 0 12px}
+    .five-modal .five-modal-warning{padding:14px;border:1px solid #9b4942;color:#74352f;margin:16px 0;font-size:13px;line-height:1.5}
+    .five-modal input{width:100%;box-sizing:border-box;background:transparent;border:1px solid #8e8a82;padding:14px;font:16px Arial,sans-serif;margin:8px 0 18px;color:#111}
+    .five-modal-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .five-modal-actions button{flex:1;min-width:120px}
+    .five-modal-actions .five-modal-danger{background:#8a3e37;color:#fff;border-color:#8a3e37}
+    .five-modal-error{color:#8a3e37;font-size:12px;line-height:1.4;margin:0 0 12px}
+    @media(max-width:420px){.five-modal{padding:20px}.five-modal h2{font-size:25px}}
+    #fiveAccountPanel .five-account-note.warning{color:#7a3535}
     #fiveAccountPanel .five-unlock-status{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#1685ff;margin-top:14px}
     #fiveAccountPanel .five-account-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#77736c}
     #fiveAccountPanel .five-account-email{font-size:16px;overflow-wrap:anywhere;margin:10px 0 18px}
@@ -37,8 +51,8 @@
     <div class="five-account-email" id="fiveAccountEmail"></div>
     <div class="five-account-summary">
       <div class="five-account-row"><span>YOUR CALLS</span><strong id="homeCalls">0</strong></div>
-      <div class="five-account-row"><span>CALLS TODAY</span><strong id="fiveCallsToday">0 / 10</strong></div>
-      <p class="five-account-note" id="fiveDailyNote">Daily limit: 10 recorded PLAY votes per Kyiv calendar day.</p>
+      <div class="five-account-row"><span>CALLS LEFT TODAY</span><strong id="fiveCallsToday">0 / 10</strong></div>
+      <p class="five-account-note" id="fiveDailyNote">Daily limit: 10 recorded PLAY votes per New York calendar day.</p>
       <div class="five-account-row"><span>NEXT UNLOCK</span><strong id="homeUnlock">10 calls → YOUR EYE</strong></div>
       <div class="five-account-progress" aria-label="Progress to next unlock"><span id="fiveUnlockProgress"></span></div>
       <div class="five-unlock-status" id="fiveUnlockStatus">First milestone</div>
@@ -53,6 +67,25 @@
     <div class="five-account-message" id="fiveAccountMessage" role="status"></div>
   `;
   authSection.appendChild(panel);
+
+  const modal = document.createElement("div");
+  modal.className = "five-modal-backdrop";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <section class="five-modal" role="dialog" aria-modal="true" aria-labelledby="fiveDeleteTitle">
+      <div class="five-modal-kicker">ACCOUNT CONTROL</div>
+      <h2 id="fiveDeleteTitle">Delete account?</h2>
+      <p id="fiveDeleteIntro">You are about to permanently delete your FIVE account.</p>
+      <div class="five-modal-warning" id="fiveDeleteWarning">Your progress and unlocked milestones will be lost. Every vote you made will be removed from the artists’ totals and may change their rankings.</div>
+      <p id="fiveDeleteStep">This cannot be undone.</p>
+      <input id="fiveDeleteInput" type="text" autocomplete="off" autocapitalize="characters" placeholder="Type DELETE to confirm" hidden />
+      <div class="five-modal-error" id="fiveDeleteError" hidden></div>
+      <div class="five-modal-actions">
+        <button type="button" id="fiveDeleteCancel">CANCEL</button>
+        <button type="button" id="fiveDeleteContinue" class="five-modal-danger">CONTINUE</button>
+      </div>
+    </section>`;
+  document.body.appendChild(modal);
 
   let client;
   try {
@@ -139,24 +172,24 @@
     const playCalls = calls.filter(call => !call.mode || call.mode === "play");
     const total = playCalls.length;
     const today = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Kyiv", year: "numeric", month: "2-digit", day: "2-digit"
+      timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
     }).format(new Date());
     const todayCount = playCalls.filter(call => {
       if (!call.created_at) return false;
       return new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/Kyiv", year: "numeric", month: "2-digit", day: "2-digit"
+        timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
       }).format(new Date(call.created_at)) === today;
     }).length;
     document.getElementById("homeCalls").textContent = String(total);
-    document.getElementById("fiveCallsToday").textContent = `${Math.min(todayCount, 10)} / 10`;
+    document.getElementById("fiveCallsToday").textContent = `${Math.max(0, 10 - todayCount)} / 10`;
     const dailyNote = document.getElementById("fiveDailyNote");
     if (dailyNote) {
       dailyNote.classList.toggle("warning", todayCount >= 10);
       dailyNote.textContent = todayCount > 10
-        ? "Daily limit reached. Your older history contains more than 10 calls today; new PLAY calls stay blocked until the Kyiv calendar day resets."
+        ? "Daily limit reached. Your older history contains more than 10 calls today; new PLAY calls stay blocked until the New York calendar day resets."
         : todayCount === 10
-          ? "Daily limit reached. You can make more PLAY calls after the Kyiv calendar day resets."
-          : `${10 - todayCount} PLAY call${todayCount === 9 ? "" : "s"} remaining today (Kyiv time).`;
+          ? "Daily limit reached. You can make more PLAY calls after the New York calendar day resets."
+          : `${10 - todayCount} PLAY call${10 - todayCount === 1 ? "" : "s"} remaining today (New York time).`;
     }
     renderUnlocks(total);
   }
@@ -185,34 +218,79 @@
     if (typeof window.home === "function") window.home();
   });
 
-  deleteBtn.addEventListener("click", async () => {
-    const first = window.confirm("Delete your FIVE account permanently? Your account, call history, and artist submissions will be deleted. This cannot be undone.");
-    if (!first) return;
-    const confirmation = window.prompt('To confirm permanent deletion, type DELETE');
-    if (confirmation !== "DELETE") {
-      say("Account deletion cancelled. The confirmation text did not match.");
+  const modalInput = document.getElementById("fiveDeleteInput");
+  const modalError = document.getElementById("fiveDeleteError");
+  const modalStep = document.getElementById("fiveDeleteStep");
+  const modalIntro = document.getElementById("fiveDeleteIntro");
+  const modalTitle = document.getElementById("fiveDeleteTitle");
+  const modalContinue = document.getElementById("fiveDeleteContinue");
+  const modalCancel = document.getElementById("fiveDeleteCancel");
+  let deleteStep = 1;
+
+  function openDeleteModal() {
+    deleteStep = 1;
+    modalTitle.textContent = "DELETE ACCOUNT?";
+    modalIntro.textContent = "You are about to permanently delete your FIVE account and all associated personal data.";
+    modalStep.textContent = "Review the consequences. You will confirm again before deletion starts.";
+    modalInput.hidden = true;
+    modalInput.value = "";
+    modalError.hidden = true;
+    modalError.textContent = "";
+    modalContinue.disabled = false;
+    modalCancel.disabled = false;
+    modalContinue.textContent = "CONTINUE";
+    modal.hidden = false;
+    modalCancel.focus();
+  }
+  function closeDeleteModal() {
+    modal.hidden = true;
+    modalInput.value = "";
+  }
+  modalCancel.addEventListener("click", closeDeleteModal);
+  modal.addEventListener("click", event => {
+    if (event.target === modal) closeDeleteModal();
+  });
+  modalContinue.addEventListener("click", async () => {
+    if (deleteStep === 1) {
+      deleteStep = 2;
+      modalTitle.textContent = "CONFIRM DELETION";
+      modalIntro.textContent = "This action cannot be undone. FIVE cannot restore your account or vote history.";
+      modalStep.textContent = "Type DELETE below to confirm. Your votes will be removed from artist totals, which can change rankings.";
+      modalInput.hidden = false;
+      modalContinue.textContent = "DELETE ACCOUNT";
+      modalInput.focus();
       return;
     }
+    if (modalInput.value.trim() !== "DELETE") {
+      modalError.textContent = "Type DELETE exactly to confirm.";
+      modalError.hidden = false;
+      return;
+    }
+    modalContinue.disabled = true;
+    modalCancel.disabled = true;
+    modalContinue.textContent = "DELETING…";
+    modalError.hidden = true;
     deleteBtn.disabled = true;
     signOutBtn.disabled = true;
-    deleteBtn.textContent = "DELETING…";
-    say("");
-    const { error } = await client.rpc("delete_my_account");
-    if (error) {
-      say("Account was not deleted: " + error.message);
+    try {
+      const { error } = await client.rpc("delete_my_account");
+      if (error) throw error;
+      await client.auth.signOut();
+      closeDeleteModal();
+      render(null);
+      if (typeof window.home === "function") window.home();
+      say("Your account and progress were deleted. Your votes were removed from artist totals and rankings may have changed.", true);
+    } catch (error) {
+      modalError.textContent = "Account was not deleted: " + (error?.message || "Please try again.");
+      modalError.hidden = false;
+      modalContinue.disabled = false;
+      modalCancel.disabled = false;
+      modalContinue.textContent = "TRY AGAIN";
       deleteBtn.disabled = false;
       signOutBtn.disabled = false;
-      deleteBtn.textContent = "DELETE ACCOUNT";
-      return;
     }
-    await client.auth.signOut();
-    render(null);
-    say("Your account and associated data have been deleted.", true);
-    deleteBtn.disabled = false;
-    signOutBtn.disabled = false;
-    deleteBtn.textContent = "DELETE ACCOUNT";
-    if (typeof window.home === "function") window.home();
   });
+  deleteBtn.addEventListener("click", openDeleteModal);
 
   client.auth.onAuthStateChange((_event, session) => {
     render(session);
