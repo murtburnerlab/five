@@ -56,7 +56,12 @@ function updateAuthUI() {
   if ($("authNav")) $("authNav").textContent = ok ? "ACCOUNT" : "SIGN IN";
   if ($("counter")) $("counter").textContent = ok ? (currentSession.user.email || "SIGNED IN") : "SIGNED OUT";
   if ($("homeAuth")) $("homeAuth").textContent = ok ? (currentSession.user.email || "Signed in") : "Signed out";
-  if ($("homeCalls")) $("homeCalls").textContent = ok ? String(myCalls.length) : "Sign in";
+  if ($("homeCalls")) $("homeCalls").textContent = ok ? String(myCalls.filter(c => (c.mode || "play") === "play").length) : "Sign in";
+  if ($("homeActive")) $("homeActive").textContent = ok ? "0" : "—";
+  if ($("homeUnlock")) {
+    const count = myCalls.filter(c => (c.mode || "play") === "play").length;
+    $("homeUnlock").textContent = count >= 10 ? "YOUR EYE unlocked" : `${10-count} calls → YOUR EYE`;
+  }
   if ($("signOutButton")) $("signOutButton").classList.toggle("hidden", !ok);
   if ($("authPassword")) $("authPassword").disabled = ok;
   if ($("authSubmit")) $("authSubmit").disabled = ok;
@@ -116,6 +121,38 @@ async function signOut() {
 function home() {
   show("home");
   updateAuthUI();
+  loadHomeData();
+}
+
+async function loadHomeData() {
+  const list = $("homeTopFive");
+  const artistsEl = $("globalArtists");
+  const choicesEl = $("globalChoices");
+  if (list) list.innerHTML = `<div class="small">Loading live ranking…</div>`;
+  try {
+    const { data, error } = await supabaseClient.rpc("get_public_rankings");
+    if (error) throw error;
+    const rows = Array.isArray(data) ? data : [];
+    if (artistsEl) artistsEl.textContent = String(rows.length);
+    const totalChoices = rows.reduce((sum, row) => sum + Number(row.choices || 0), 0);
+    if (choicesEl) choicesEl.textContent = String(totalChoices);
+    if (!list) return;
+    if (!rows.length) {
+      list.innerHTML = `<div class="small" style="padding:15px 0">No public calls recorded yet.</div>`;
+      return;
+    }
+    list.innerHTML = rows.slice(0, 5).map((row, i) => `
+      <div class="home-rank-row">
+        <div class="home-rank-num">#${escapeHtml(row.rank ?? i + 1)}</div>
+        <div><div class="home-rank-name">${escapeHtml(row.name || "Artist")}</div>
+        <div class="home-rank-country">${escapeHtml(row.country || "Country not listed")}</div></div>
+        <div class="home-rank-choices">${Number(row.choices || 0)} choices</div>
+      </div>`).join("");
+  } catch (error) {
+    if (artistsEl) artistsEl.textContent = "—";
+    if (choicesEl) choicesEl.textContent = "—";
+    if (list) list.innerHTML = `<div class="small" style="padding:15px 0">Ranking unavailable. ${escapeHtml(error?.message || "Please refresh.")}</div>`;
+  }
 }
 
 function normalizeArtist(row, roundId) {
@@ -254,7 +291,7 @@ async function loadMyCalls() {
 
   const { data, error } = await supabaseClient
     .from("calls")
-    .select("id,created_at,rank_at_choice,artist_id,artists(id,name,country,instagram_url,website_url)")
+    .select("id,created_at,rank_at_choice,artist_id,mode,artists(id,name,country,instagram_url,website_url)")
     .eq("user_id", currentSession.user.id)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -302,21 +339,48 @@ function eye() {
 }
 
 function renderEye() {
-  const n = myCalls.length;
+  const playCalls = myCalls.filter(call => (call.mode || "play") === "play");
+  const n = playCalls.length;
   $("eyeCount").textContent = `${n} REAL CALL${n === 1 ? "" : "S"}`;
   $("eyeHeadline").textContent = n < 10 ? "Your eye is starting to form." : "Your history is now measurable.";
   $("eyeCopy").textContent = n < 10
     ? `Make ${10-n} more call${10-n === 1 ? "" : "s"} to unlock the first real signal.`
-    : "FIVE is ready to calculate your first real taste signals once the ranking history is deep enough.";
+    : "Your actual choices are recorded. Taste signals will become more reliable as the ranking accumulates real votes.";
 
-  $("metrics").innerHTML = ["EARLY","INDEPENDENT","EXPLORER"].map(name => `
-    <div class="metric"><div class="metric-name">${name}</div>
-    <div class="metric-num">—</div>
-    <div class="metric-copy">Not enough backend history yet.</div></div>`).join("");
+  const counts = new Map();
+  playCalls.forEach(call => {
+    const artist = call.artists || {};
+    const id = call.artist_id;
+    if (!id) return;
+    const current = counts.get(id) || { name: artist.name || "Artist", country: artist.country || "", count: 0 };
+    current.count += 1;
+    counts.set(id, current);
+  });
+  const preferences = [...counts.values()].sort((a,b) => b.count - a.count || a.name.localeCompare(b.name));
+  const uniqueArtists = preferences.length;
+  const repeatedVotes = preferences.reduce((sum, artist) => sum + Math.max(0, artist.count - 1), 0);
+  const explorerRate = n ? Math.round(uniqueArtists / n * 100) : 0;
+  const repeatRate = n ? Math.round(repeatedVotes / n * 100) : 0;
 
-  $("fiveList").innerHTML = `<div class="small" style="padding:15px 0">Your repeated artist preferences will appear here after enough real calls.</div>`;
-  $("bestCall").textContent = "—";
-  $("bestCallCopy").textContent = "FIVE will calculate this from real ranking movement.";
+  $("metrics").innerHTML = [
+    {name:"EXPLORER", value:`${explorerRate}%`, copy:`${uniqueArtists} different artists chosen across ${n} calls.`},
+    {name:"REPEAT INTEREST", value:`${repeatRate}%`, copy:"Share of calls beyond the first choice of the same artist."},
+    {name:"CALL HISTORY", value:String(n), copy:"Recorded play votes in your account."}
+  ].map(metric => `
+    <div class="metric"><div class="metric-name">${metric.name}</div>
+    <div class="metric-num">${escapeHtml(metric.value)}</div>
+    <div class="metric-copy">${escapeHtml(metric.copy)}</div></div>`).join("");
+
+  $("fiveList").innerHTML = preferences.length
+    ? preferences.slice(0,5).map(artist => `<div class="five-item"><strong>${escapeHtml(artist.name)}</strong><span>${artist.count} call${artist.count === 1 ? "" : "s"}</span></div>`).join("")
+    : `<div class="small" style="padding:15px 0">No recorded play votes yet.</div>`;
+  if (preferences.length) {
+    $("bestCall").textContent = preferences[0].name;
+    $("bestCallCopy").textContent = `${preferences[0].count} recorded call${preferences[0].count === 1 ? "" : "s"} for this artist.`;
+  } else {
+    $("bestCall").textContent = "—";
+    $("bestCallCopy").textContent = "Your most frequently chosen artist will appear here.";
+  }
 }
 
 function daily() {
@@ -326,7 +390,6 @@ function daily() {
 }
 
 async function rankings() {
-  if (!signedIn()) return authView("Sign in to view the live rankings.");
   show("rankings");
   await renderRankings();
 }
