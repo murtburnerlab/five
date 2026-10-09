@@ -12,6 +12,8 @@
     #fiveAccountPanel .five-account-row span{font-size:10px;letter-spacing:.12em;color:#77736c}
     #fiveAccountPanel .five-account-row strong{font-size:16px;font-weight:500;text-align:right;overflow-wrap:anywhere}
     #fiveAccountPanel .five-account-note{font-size:12px;line-height:1.5;color:#77736c;margin:18px 0 0}
+    #fiveAccountPanel .five-account-note.warning{color:#7a3535}
+    #fiveAccountPanel .five-unlock-status{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#1685ff;margin-top:14px}
     #fiveAccountPanel .five-account-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#77736c}
     #fiveAccountPanel .five-account-email{font-size:16px;overflow-wrap:anywhere;margin:10px 0 18px}
     #fiveAccountPanel .five-account-progress{height:4px;background:#d6d2ca;margin-top:10px}
@@ -36,11 +38,13 @@
     <div class="five-account-summary">
       <div class="five-account-row"><span>YOUR CALLS</span><strong id="homeCalls">0</strong></div>
       <div class="five-account-row"><span>CALLS TODAY</span><strong id="fiveCallsToday">0 / 10</strong></div>
+      <p class="five-account-note" id="fiveDailyNote">Daily limit: 10 recorded PLAY votes per Kyiv calendar day.</p>
       <div class="five-account-row"><span>NEXT UNLOCK</span><strong id="homeUnlock">10 calls → YOUR EYE</strong></div>
       <div class="five-account-progress" aria-label="Progress to next unlock"><span id="fiveUnlockProgress"></span></div>
-      <p class="five-account-note" id="fiveUnlockNote">Every real call moves you toward the next milestone.</p>
-      <div class="five-account-row"><span>DAILY FIVE</span><strong>Daily challenge</strong></div>
-      <p class="five-account-note">A daily set of five artists, designed to make discovery a habit. The challenge is not active yet; it does not give extra votes or bypass the 10-call daily limit.</p>
+      <div class="five-unlock-status" id="fiveUnlockStatus">First milestone</div>
+      <p class="five-account-note" id="fiveUnlockNote">Reach 10 real calls to unlock your personal choice-history summary in YOUR EYE.</p>
+      <div class="five-account-row"><span>DAILY FIVE</span><strong>Not active yet</strong></div>
+      <p class="five-account-note">DAILY FIVE is planned as a daily set of five artists. It is not playable yet, gives no extra votes, and does not bypass the 10-call daily limit.</p>
     </div>
     <div class="five-account-actions">
       <button type="button" id="fiveAccountSignOut">SIGN OUT</button>
@@ -73,26 +77,29 @@
 
   function renderUnlocks(total) {
     const milestones = [
-      { count: 10, title: "YOUR EYE", note: "First milestone: your personal choice history." },
-      { count: 25, title: "EXPLORER SIGNAL", note: "Next milestone: a broader discovery profile." },
-      { count: 50, title: "TASTE PROFILE", note: "Next milestone: a more detailed picture of your preferences." },
-      { count: 100, title: "FIVE INSIDER", note: "Next milestone: your long-term discovery profile." },
-      { count: 250, title: "COLLECTOR LEVEL", note: "You have reached the current milestone track." }
+      { count: 10, title: "YOUR EYE", note: "Unlock your personal choice-history summary and see which artists you choose most often." },
+      { count: 25, title: "EXPLORER SIGNAL", note: "Unlock your discovery-breadth percentage in YOUR EYE." },
+      { count: 50, title: "TASTE PROFILE", note: "Unlock your repeat-interest rate in YOUR EYE." },
+      { count: 100, title: "FIVE INSIDER", note: "Reach the long-term history milestone; your recorded calls remain available in YOUR CALLS." },
+      { count: 250, title: "COLLECTOR LEVEL", note: "Reach 250 recorded calls. This is a milestone badge only; no extra votes or unbuilt benefits are promised." }
     ];
-    const next = milestones.find(item => total < item.count);
     const label = document.getElementById("homeUnlock");
     const note = document.getElementById("fiveUnlockNote");
     const progress = document.getElementById("fiveUnlockProgress");
+    const status = document.getElementById("fiveUnlockStatus");
+    const achieved = milestones.filter(item => total >= item.count);
+    const next = milestones.find(item => total < item.count);
+    status.textContent = achieved.length ? `Unlocked: ${achieved[achieved.length - 1].title}` : "No milestones unlocked yet";
     if (!next) {
-      label.textContent = "All current milestones reached";
-      note.textContent = "You have completed the current milestone track. More levels can be added as FIVE develops.";
+      label.textContent = "All milestones reached";
+      note.textContent = "You have reached all currently defined milestones.";
       progress.style.width = "100%";
       return;
     }
-    const previous = milestones[milestones.indexOf(next) - 1]?.count || 0;
+    const previous = achieved.length ? achieved[achieved.length - 1].count : 0;
     const percent = Math.max(0, Math.min(100, ((total - previous) / (next.count - previous)) * 100));
     label.textContent = `${next.count} calls → ${next.title}`;
-    note.textContent = `${next.count - total} more call${next.count - total === 1 ? "" : "s"} to the next milestone.`;
+    note.textContent = `${next.count - total} more call${next.count - total === 1 ? "" : "s"} to unlock: ${next.note}`;
     progress.style.width = `${percent}%`;
   }
 
@@ -124,6 +131,8 @@
       .limit(1000);
     if (error) {
       say("Could not load your call history: " + error.message);
+      document.getElementById("homeCalls").textContent = "—";
+      document.getElementById("fiveCallsToday").textContent = "— / 10";
       return;
     }
     const calls = data || [];
@@ -139,7 +148,16 @@
       }).format(new Date(call.created_at)) === today;
     }).length;
     document.getElementById("homeCalls").textContent = String(total);
-    document.getElementById("fiveCallsToday").textContent = `${todayCount} / 10`;
+    document.getElementById("fiveCallsToday").textContent = `${Math.min(todayCount, 10)} / 10`;
+    const dailyNote = document.getElementById("fiveDailyNote");
+    if (dailyNote) {
+      dailyNote.classList.toggle("warning", todayCount >= 10);
+      dailyNote.textContent = todayCount > 10
+        ? "Daily limit reached. Your older history contains more than 10 calls today; new PLAY calls stay blocked until the Kyiv calendar day resets."
+        : todayCount === 10
+          ? "Daily limit reached. You can make more PLAY calls after the Kyiv calendar day resets."
+          : `${10 - todayCount} PLAY call${todayCount === 9 ? "" : "s"} remaining today (Kyiv time).`;
+    }
     renderUnlocks(total);
   }
 

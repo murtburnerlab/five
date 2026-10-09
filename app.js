@@ -362,12 +362,26 @@ function renderEye() {
   const explorerRate = n ? Math.round(uniqueArtists / n * 100) : 0;
   const repeatRate = n ? Math.round(repeatedVotes / n * 100) : 0;
 
-  $("metrics").innerHTML = [
-    {name:"EXPLORER", value:`${explorerRate}%`, copy:`${uniqueArtists} different artists chosen across ${n} calls.`},
-    {name:"REPEAT INTEREST", value:`${repeatRate}%`, copy:"Share of calls beyond the first choice of the same artist."},
-    {name:"CALL HISTORY", value:String(n), copy:"Recorded play votes in your account."}
-  ].map(metric => `
-    <div class="metric"><div class="metric-name">${metric.name}</div>
+  const unlockedMetrics = [];
+  const metricCards = [
+    {count:10, name:"YOUR EYE", value:`${uniqueArtists} artists`, copy:`Your personal choice history across ${n} recorded calls.`},
+    {count:25, name:"EXPLORER SIGNAL", value:`${explorerRate}%`, copy:`Discovery breadth: ${uniqueArtists} different artists across ${n} calls.`},
+    {count:50, name:"TASTE PROFILE", value:`${repeatRate}%`, copy:"Repeat-interest rate: the share of calls beyond your first choice of each artist."},
+    {count:100, name:"FIVE INSIDER", value:`${n} calls`, copy:"Long-term history milestone reached. Your recorded calls remain available in YOUR CALLS."}
+  ];
+  metricCards.forEach(metric => {
+    if (n >= metric.count) {
+      unlockedMetrics.push(metric);
+    } else {
+      unlockedMetrics.push({
+        name: `${metric.name} · LOCKED`,
+        value: `${metric.count-n} to go`,
+        copy: `Reach ${metric.count} real calls to unlock this feature.`
+      });
+    }
+  });
+  $("metrics").innerHTML = unlockedMetrics.map(metric => `
+    <div class="metric"><div class="metric-name">${escapeHtml(metric.name)}</div>
     <div class="metric-num">${escapeHtml(metric.value)}</div>
     <div class="metric-copy">${escapeHtml(metric.copy)}</div></div>`).join("");
 
