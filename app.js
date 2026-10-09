@@ -194,8 +194,12 @@ async function newRound() {
   busy = false;
 
   if (error) {
-    $("roundLabel").textContent = "ERROR";
-    return message("playMessage", error.message, "error");
+    $("roundLabel").textContent = "LIMIT REACHED";
+    const safeMessage = String(error.message || "Please try again tomorrow.")
+      .replace(/New York calendar day/gi, "day")
+      .replace(/New York time/gi, "")
+      .replace(/America\/New_York/gi, "");
+    return message("playMessage", safeMessage, "error");
   }
 
   currentRound = normalizeRound(data);
@@ -276,6 +280,7 @@ async function choose(i) {
   $("resultStatus").textContent = "SAVED";
 
   await loadMyCalls();
+  window.dispatchEvent(new CustomEvent("five:call-recorded"));
   busy = false;
   show("result");
   updateAuthUI();
@@ -342,6 +347,29 @@ function renderEye() {
   const playCalls = myCalls.filter(call => (call.mode || "play") === "play");
   const n = playCalls.length;
   $("eyeCount").textContent = `${n} REAL CALL${n === 1 ? "" : "S"}`;
+  const milestones = [
+    {count:10,title:"YOUR EYE",copy:"Personal choice-history summary unlocked."},
+    {count:25,title:"EXPLORER SIGNAL",copy:"Discovery-breadth signal unlocked."},
+    {count:50,title:"TASTE PROFILE",copy:"Repeat-interest signal unlocked."},
+    {count:100,title:"FIVE INSIDER",copy:"Long-term history milestone unlocked."},
+    {count:250,title:"COLLECTOR LEVEL",copy:"250-call milestone reached."},
+    {count:500,title:"FIVE ICON",copy:"500 real calls. Your discovery habit has reached icon level."},
+    {count:1000,title:"TASTE AUTHORITY",copy:"1,000 real calls. Your long-term taste record is taking shape."},
+    {count:3000,title:"CULTURE SHAPER",copy:"3,000 real calls. You have built an extensive discovery history."},
+    {count:5000,title:"FIVE LEGEND",copy:"5,000 real calls. You have reached the highest current FIVE milestone."}
+  ];
+  const reached = [...milestones].reverse().find(m=>n>=m.count);
+  const next = milestones.find(m=>n<m.count);
+  const levelTitle = $("eyeLevelTitle"), levelCopy = $("eyeLevelCopy"), levelProgress = $("eyeLevelProgress");
+  if (levelTitle && levelCopy && levelProgress) {
+    levelTitle.textContent = reached ? reached.title : "FIRST CALL";
+    levelCopy.textContent = reached
+      ? `${reached.copy} ${next ? `${next.count-n} more calls to unlock ${next.title}.` : "All current milestones reached."}`
+      : `${10-n} more calls to unlock YOUR EYE.`;
+    const previous = reached?.count || 0;
+    const target = next?.count || (reached?.count || 10);
+    levelProgress.style.width = `${next ? Math.max(0,Math.min(100,(n-previous)/(target-previous)*100)) : 100}%`;
+  }
   $("eyeHeadline").textContent = n < 10 ? "Your eye is starting to form." : "Your history is now measurable.";
   $("eyeCopy").textContent = n < 10
     ? `Make ${10-n} more call${10-n === 1 ? "" : "s"} to unlock the first real signal.`
@@ -472,18 +500,38 @@ async function sendSubmission() {
 }
 
 async function shareEye() {
-  const text = `My FIVE Eye — ${myCalls.length} real calls.`;
-  const data = { title: "My FIVE Eye", text, url: location.href };
-  try {
-    if (navigator.share) return await navigator.share(data);
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(`${text} ${location.href}`);
-      return alert("Share link copied.");
-    }
-    prompt("Copy your FIVE Eye link:", location.href);
-  } catch (e) {
-    if (e?.name !== "AbortError") prompt("Copy your FIVE Eye link:", location.href);
-  }
+  const playCalls = myCalls.filter(call => (call.mode || "play") === "play");
+  const counts = new Map();
+  playCalls.forEach(call => {
+    const a = call.artists || {};
+    const id = call.artist_id;
+    if (!id) return;
+    const entry = counts.get(id) || { name: a.name || "Artist", count: 0 };
+    entry.count += 1; counts.set(id, entry);
+  });
+  const favorite = [...counts.values()].sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name))[0];
+  await shareFiveStory({
+    title: favorite?.name || "MY FIVE EYE",
+    subtitle: favorite ? `MY TOP ARTIST · ${favorite.count} CALL${favorite.count===1?"":"S"}` : `${playCalls.length} REAL CALLS`,
+    detail: favorite ? `The artist I have chosen most often on FIVE. My discovery history keeps growing.` : `I am building my personal discovery history on FIVE.`,
+    type: favorite ? "artist" : "eye"
+  });
+}
+
+async function shareFiveStory({title, subtitle, detail, type}) {
+  const canvas = document.createElement("canvas"); canvas.width=1080; canvas.height=1920;
+  const ctx=canvas.getContext("2d"); ctx.fillStyle="#f1efe9";ctx.fillRect(0,0,1080,1920);
+  ctx.fillStyle="#1685ff";ctx.fillRect(72,86,120,12);ctx.fillStyle="#111";ctx.font="900 72px Arial";ctx.fillText("FIVE",72,190);
+  ctx.strokeStyle="#111";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(72,235);ctx.lineTo(1008,235);ctx.stroke();
+  ctx.fillStyle="#77736c";ctx.font="500 28px Arial";ctx.fillText(type==="artist"?"MY MOST-CHOSEN ARTIST":"MY DISCOVERY PROFILE",72,330);
+  ctx.fillStyle="#111";ctx.font="900 88px Arial";let words=String(title).toUpperCase().split(" "),lines=[],line="";
+  words.forEach(w=>{const test=line?line+" "+w:w;if(ctx.measureText(test).width>900&&line){lines.push(line);line=w;}else line=test;});if(line)lines.push(line);let y=520;lines.slice(0,3).forEach(t=>{ctx.fillText(t,72,y);y+=100;});
+  ctx.fillStyle="#1685ff";ctx.font="700 32px Arial";ctx.fillText(String(subtitle).toUpperCase(),72,y+28);ctx.fillStyle="#111";ctx.fillRect(72,y+82,936,5);
+  ctx.fillStyle="#55524c";ctx.font="400 34px Arial";let dw=String(detail).split(" "),dl="",dy=y+155;dw.forEach(w=>{const t=dl?dl+" "+w:w;if(ctx.measureText(t).width>900&&dl){ctx.fillText(dl,72,dy);dy+=48;dl=w;}else dl=t;});if(dl)ctx.fillText(dl,72,dy);
+  ctx.fillStyle="#111";ctx.fillRect(72,1660,936,180);ctx.fillStyle="#f1efe9";ctx.font="700 28px Arial";ctx.fillText("DISCOVER. CHOOSE. RANK.",108,1730);ctx.fillStyle="#1685ff";ctx.font="900 46px Arial";ctx.fillText("FIVE",108,1795);ctx.fillStyle="#77736c";ctx.font="400 24px Arial";ctx.fillText("murtburnerlab.github.io/five",72,1880);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));if(!blob)return;
+  const file=new File([blob],"five-story.png",{type:"image/png"});
+  try{if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})))await navigator.share({files:[file],title:"My FIVE Story",text:`${title} — ${subtitle}`});else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="five-story.png";a.click();URL.revokeObjectURL(a.href);alert("Story image saved. Upload it to Instagram Stories.");}}catch(e){if(e?.name!=="AbortError")alert("Could not share the story image. Please try again.");}
 }
 
 async function init() {

@@ -88,6 +88,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <section id="eye" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">YOUR SIGNAL</div><div class="section-title">YOUR EYE</div></div><div class="round" id="eyeCount">0 CALLS</div></div>
 <div id="eyeIntro" class="report"><div class="eyebrow">BUILDING</div><h3 id="eyeHeadline">Your eye is starting to form.</h3><div class="small" id="eyeCopy">Make 10 calls to unlock your first measurable signal.</div></div>
+<div class="report" id="eyeMilestonePanel"><div class="eyebrow">YOUR LEVEL</div><h3 id="eyeLevelTitle">FIRST CALL</h3><div class="small" id="eyeLevelCopy">Make real calls to unlock achievements.</div><div class="progress" style="height:4px;background:#d6d2ca;margin-top:18px"><span id="eyeLevelProgress" style="display:block;height:4px;width:0;background:#1685ff"></span></div><div class="share" style="margin-top:18px"><button class="primary" onclick="shareEye()">SHARE MY STORY</button></div></div>
 <div class="eye-grid" id="metrics"></div><div class="eye-two">
 <div class="report"><div class="eyebrow">YOUR FIVE</div><h3>Artists you keep choosing.</h3><div id="fiveList" class="five-list"></div></div>
 <div class="report"><div class="eyebrow">BEST CALL</div><h3 id="bestCall">—</h3><div class="small" id="bestCallCopy">Make more calls to build your history.</div><div class="share"><button class="primary" onclick="shareEye()">SHARE YOUR EYE</button></div></div>
@@ -112,9 +113,9 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <footer class="site-footer"><button onclick="submitArtist()">SUBMIT ARTIST</button><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
 
 <div id="modal" class="modal hidden" onclick="closeProfile()"><div class="modalbox" onclick="event.stopPropagation()"><div class="modaltop"><div class="eyebrow">ARTIST PROFILE</div><button class="close" onclick="closeProfile()">×</button></div><h2 id="profileName"></h2><div id="profileCountry" class="small"></div><p id="profileCopy"></p><a id="profileInstagram" href="#" target="_blank" rel="noopener" class="hidden">OPEN INSTAGRAM</a><a id="profileWebsite" href="#" target="_blank" rel="noopener" class="hidden">OPEN WEBSITE</a><br><button class="primary" id="profileChoose" onclick="chooseProfile()">CHOOSE THIS ARTIST</button></div></div>
-<script src="./app.js?v=20261009-no-daily"></script>
+<script src="./app.js?v=20261009-gamification1"></script>
 <script>function toggleAuthMode(){const b=document.getElementById("authModeSwitch");const toSignup=b.textContent.trim()==="CREATE ACCOUNT";setAuthMode(toSignup?"signup":"signin");b.textContent=toSignup?"BACK TO SIGN IN":"CREATE ACCOUNT";}</script>
 <script src="./five-auth-buttons.js"></script>
-<script src="./five-account-ui.js?v=20261009-no-daily"></script>
+<script src="./five-account-ui.js?v=20261009-gamification1"></script>
 </body>
 </html>

@@ -97,6 +97,22 @@
     #fiveAccountPanel .five-account-message{display:none;margin-top:12px;color:#7a3535;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
     #fiveAccountPanel .five-account-message.success{color:#1f5d43}
     #auth.five-is-signed-in .form,#auth.five-is-signed-in .auth-actions,#auth.five-is-signed-in #fiveSocialAuth,#auth.five-is-signed-in #authCopy{display:none!important}
+
+    #fiveAccountPanel .five-account-actions button{border-radius:0!important;min-width:182px}
+    #fiveAccountPanel .five-share-progress{border-color:#1685ff!important;color:#1685ff!important}
+    .five-achievement-backdrop{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(12,12,12,.76);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+    .five-achievement-backdrop[hidden]{display:none!important}
+    .five-achievement-card{position:relative;width:min(100%,410px);box-sizing:border-box;background:#f1efe9;color:#111;border:1px solid #d4d0c7;padding:28px 24px 24px;text-align:left;box-shadow:0 24px 90px #0005}
+    .five-achievement-mark{height:112px;display:flex;align-items:center;justify-content:center;margin:0 0 24px;background:#111;color:#1685ff;font-size:46px;font-weight:900;letter-spacing:-.08em;position:relative;overflow:hidden}
+    .five-achievement-mark:after{content:"FIVE / LEVEL UP";position:absolute;bottom:12px;left:14px;font-size:9px;letter-spacing:.18em;color:#f1efe9;font-weight:600}
+    .five-achievement-card .kicker{font-size:10px;letter-spacing:.18em;color:#77736c;text-transform:uppercase;margin-bottom:16px}
+    .five-achievement-card h2{font-size:clamp(32px,8vw,44px);line-height:.92;letter-spacing:-.06em;text-transform:uppercase;margin:0 0 14px}
+    .five-achievement-card p{font-size:14px;line-height:1.5;color:#55524c;margin:0 0 20px}
+    .five-achievement-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .five-achievement-actions button{border:1px solid #111;border-radius:0!important;background:transparent;color:#111;min-height:50px;padding:12px 10px;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+    .five-achievement-actions button:last-child{background:#111;color:#fff}
+    @media(max-width:420px){.five-achievement-actions{grid-template-columns:1fr}.five-achievement-card{padding:22px 20px}}
+
     @media(max-width:420px){#fiveAccountPanel .five-account-row strong{max-width:58%;font-size:15px}}
   `;
   document.head.appendChild(style);
@@ -117,6 +133,7 @@
       <p class="five-account-note" id="fiveUnlockNote">Reach 10 real calls to unlock your personal choice-history summary in YOUR EYE.</p>
     </div>
     <div class="five-account-actions">
+      <button type="button" id="fiveShareProgress" class="five-share-progress">SHARE MY LEVEL</button>
       <button type="button" id="fiveAccountSignOut">SIGN OUT</button>
       <button type="button" id="fiveAccountDelete" class="five-delete">DELETE ACCOUNT</button>
     </div>
@@ -143,6 +160,19 @@
     </section>`;
   document.body.appendChild(modal);
 
+  const achievementModal = document.createElement("div");
+  achievementModal.className = "five-achievement-backdrop";
+  achievementModal.hidden = true;
+  achievementModal.innerHTML = `
+    <section class="five-achievement-card" role="dialog" aria-modal="true" aria-labelledby="fiveAchievementTitle">
+      <div class="five-achievement-mark" id="fiveAchievementMark">10</div>
+      <div class="kicker">ACHIEVEMENT UNLOCKED</div>
+      <h2 id="fiveAchievementTitle">YOUR EYE</h2>
+      <p id="fiveAchievementCopy">Your choices are becoming a personal signal. Keep exploring to unlock the next level.</p>
+      <div class="five-achievement-actions"><button type="button" id="fiveAchievementClose">KEEP EXPLORING</button><button type="button" id="fiveAchievementShare">SHARE ACHIEVEMENT</button></div>
+    </section>`;
+  document.body.appendChild(achievementModal);
+
   let client;
   try {
     if (!window.supabase?.createClient || !window.FIVE_SUPABASE_URL || !window.FIVE_SUPABASE_KEY) {
@@ -164,13 +194,78 @@
     messageEl.style.display = text ? "block" : "none";
   }
 
-  function renderUnlocks(total) {
+  const fiveMilestones = [
+    { count: 10, title: "YOUR EYE", copy: "Your first personal signal is unlocked. Your choices are now building a taste profile." },
+    { count: 25, title: "EXPLORER SIGNAL", copy: "You are exploring beyond the obvious. Your discovery-breadth signal is unlocked." },
+    { count: 50, title: "TASTE PROFILE", copy: "Your history is getting richer. Your repeat-interest signal is unlocked." },
+    { count: 100, title: "FIVE INSIDER", copy: "100 real calls. You have built a substantial personal record inside FIVE." },
+    { count: 250, title: "COLLECTOR LEVEL", copy: "250 real calls. Your commitment to discovery has reached a new level." },
+    { count: 500, title: "FIVE ICON", copy: "500 real calls. Your discovery habit has reached icon level." },
+    { count: 1000, title: "TASTE AUTHORITY", copy: "1,000 real calls. Your long-term taste record is taking shape." },
+    { count: 3000, title: "CULTURE SHAPER", copy: "3,000 real calls. You have built an extensive discovery history." },
+    { count: 5000, title: "FIVE LEGEND", copy: "5,000 real calls. You have reached the highest current FIVE milestone." }
+  ];
+  let activeAchievement = null;
+  function showAchievement(item) {
+    activeAchievement = item;
+    document.getElementById("fiveAchievementMark").textContent = String(item.count).padStart(2,"0");
+    document.getElementById("fiveAchievementTitle").textContent = item.title;
+    document.getElementById("fiveAchievementCopy").textContent = item.copy;
+    achievementModal.hidden = false;
+  }
+  document.getElementById("fiveAchievementClose").addEventListener("click", () => { achievementModal.hidden = true; });
+  achievementModal.addEventListener("click", event => { if (event.target === achievementModal) achievementModal.hidden = true; });
+  document.getElementById("fiveAchievementShare").addEventListener("click", async () => {
+    if (activeAchievement) await shareStoryCard({type:"achievement", title:activeAchievement.title, subtitle:`LEVEL ${activeAchievement.count}`, detail:activeAchievement.copy});
+  });
+  document.getElementById("fiveShareProgress").addEventListener("click", async () => {
+    const total = Number(document.getElementById("homeCalls").textContent) || 0;
+    const milestone = [...fiveMilestones].reverse().find(item => total >= item.count) || {count:0,title:"FIRST CALL",copy:"Start making real calls to build your personal discovery record."};
+    await shareStoryCard({type:"achievement",title:milestone.title,subtitle:`${total} REAL CALLS`,detail:"My discovery history is growing on FIVE."});
+  });
+
+  async function shareStoryCard({type="achievement",title="FIVE",subtitle="MY DISCOVERY",detail=""}) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080; canvas.height = 1920;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#f1efe9"; ctx.fillRect(0,0,1080,1920);
+    ctx.fillStyle = "#1685ff"; ctx.fillRect(72,86,120,12);
+    ctx.fillStyle = "#111111"; ctx.font = "900 72px Arial"; ctx.fillText("FIVE",72,190);
+    ctx.strokeStyle = "#111111"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(72,235); ctx.lineTo(1008,235); ctx.stroke();
+    ctx.fillStyle = "#77736c"; ctx.font = "500 28px Arial"; ctx.fillText(type === "artist" ? "MY MOST-CHOSEN ARTIST" : "ACHIEVEMENT UNLOCKED",72,330);
+    ctx.fillStyle = "#111111"; ctx.font = "900 92px Arial";
+    const words = String(title).toUpperCase().split(" "); let lines=[], line="";
+    words.forEach(word=>{const test=line?line+" "+word:word;if(ctx.measureText(test).width>900&&line){lines.push(line);line=word;}else line=test;}); if(line)lines.push(line);
+    let y=520; lines.slice(0,3).forEach(text=>{ctx.fillText(text,72,y);y+=104;});
+    ctx.fillStyle = "#1685ff"; ctx.font = "700 32px Arial"; ctx.fillText(String(subtitle).toUpperCase(),72,y+32);
+    ctx.fillStyle = "#111111"; ctx.fillRect(72,y+88,936,5);
+    ctx.fillStyle = "#55524c"; ctx.font = "400 34px Arial";
+    const detailWords=String(detail).split(" "); let dline="", dy=y+160;
+    detailWords.forEach(word=>{const test=dline?dline+" "+word:word;if(ctx.measureText(test).width>900&&dline){ctx.fillText(dline,72,dy);dy+=48;dline=word;}else dline=test;}); if(dline)ctx.fillText(dline,72,dy);
+    ctx.fillStyle = "#111111"; ctx.fillRect(72,1660,936,180);
+    ctx.fillStyle = "#f1efe9"; ctx.font = "700 28px Arial"; ctx.fillText("DISCOVER. CHOOSE. RANK.",108,1730);
+    ctx.fillStyle = "#1685ff"; ctx.font = "900 46px Arial"; ctx.fillText("FIVE",108,1795);
+    ctx.fillStyle = "#77736c"; ctx.font = "400 24px Arial"; ctx.fillText("murtburnerlab.github.io/five",72,1880);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve,"image/png"));
+    if (!blob) { say("Could not create the share image. Please try again."); return; }
+    const file = new File([blob],"five-story.png",{type:"image/png"});
+    try {
+      if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) await navigator.share({files:[file],title:"My FIVE achievement",text:`${title} — ${subtitle}`});
+      else { const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="five-story.png";a.click();URL.revokeObjectURL(a.href);say("Story image saved. Upload it to Instagram Stories.",true); }
+    } catch (error) { if(error?.name!=="AbortError") say("Sharing was unavailable. Try again or save the story image."); }
+  }
+
+  function renderUnlocks(total, userId) {
     const milestones = [
       { count: 10, title: "YOUR EYE", note: "Unlock your personal choice-history summary and see which artists you choose most often." },
       { count: 25, title: "EXPLORER SIGNAL", note: "Unlock your discovery-breadth percentage in YOUR EYE." },
       { count: 50, title: "TASTE PROFILE", note: "Unlock your repeat-interest rate in YOUR EYE." },
       { count: 100, title: "FIVE INSIDER", note: "Reach the long-term history milestone; your recorded calls remain available in YOUR CALLS." },
-      { count: 250, title: "COLLECTOR LEVEL", note: "Reach 250 recorded calls. This is a milestone badge only; no extra votes or unbuilt benefits are promised." }
+      { count: 250, title: "COLLECTOR LEVEL", note: "Reach 250 recorded calls and earn the Collector Level milestone." },
+      { count: 500, title: "FIVE ICON", note: "Reach 500 recorded calls and earn the FIVE ICON milestone." },
+      { count: 1000, title: "TASTE AUTHORITY", note: "Reach 1,000 recorded calls and earn the TASTE AUTHORITY milestone." },
+      { count: 3000, title: "CULTURE SHAPER", note: "Reach 3,000 recorded calls and earn the CULTURE SHAPER milestone." },
+      { count: 5000, title: "FIVE LEGEND", note: "Reach 5,000 recorded calls and earn the highest current milestone." }
     ];
     const label = document.getElementById("homeUnlock");
     const note = document.getElementById("fiveUnlockNote");
@@ -183,6 +278,13 @@
       label.textContent = "All milestones reached";
       note.textContent = "You have reached all currently defined milestones.";
       progress.style.width = "100%";
+      if (userId) {
+        const seenKey = `five-achievements-seen:${userId}`;
+        let seen = [];
+        try { seen = JSON.parse(localStorage.getItem(seenKey) || "[]"); } catch (_) {}
+        const fresh = fiveMilestones.filter(item => total >= item.count).find(item => !seen.includes(item.count));
+        if (fresh) { seen.push(fresh.count); try { localStorage.setItem(seenKey, JSON.stringify(seen)); } catch (_) {} showAchievement(fresh); }
+      }
       return;
     }
     const previous = achieved.length ? achieved[achieved.length - 1].count : 0;
@@ -190,6 +292,18 @@
     label.textContent = `${next.count} calls → ${next.title}`;
     note.textContent = `${next.count - total} more call${next.count - total === 1 ? "" : "s"} to unlock: ${next.note}`;
     progress.style.width = `${percent}%`;
+    if (userId) {
+      const unlocked = fiveMilestones.filter(item => total >= item.count);
+      const seenKey = `five-achievements-seen:${userId}`;
+      let seen = [];
+      try { seen = JSON.parse(localStorage.getItem(seenKey) || "[]"); } catch (_) {}
+      const fresh = unlocked.find(item => !seen.includes(item.count));
+      if (fresh) {
+        seen.push(fresh.count);
+        try { localStorage.setItem(seenKey, JSON.stringify(seen)); } catch (_) {}
+        showAchievement(fresh);
+      }
+    }
   }
 
   function render(session) {
@@ -247,7 +361,7 @@
           ? "Daily limit reached. You can make more PLAY calls tomorrow."
           : `${10 - todayCount} PLAY call${10 - todayCount === 1 ? "" : "s"} remaining today.`;
     }
-    renderUnlocks(total);
+    renderUnlocks(total, userId);
   }
 
   async function refresh() {
@@ -351,6 +465,10 @@
   client.auth.onAuthStateChange((_event, session) => {
     render(session);
     if (session?.user) setTimeout(() => refreshStats(session.user.id), 0);
+  });
+  window.addEventListener("five:call-recorded", async () => {
+    const { data } = await client.auth.getSession();
+    if (data.session?.user) await refreshStats(data.session.user.id);
   });
   const observer = new MutationObserver(() => {
     if (!authSection.classList.contains("hidden")) refresh();
