@@ -195,10 +195,7 @@ async function newRound() {
 
   if (error) {
     $("roundLabel").textContent = "LIMIT REACHED";
-    const safeMessage = String(error.message || "Please try again tomorrow.")
-      .replace(/New York calendar day/gi, "day")
-      .replace(/New York time/gi, "")
-      .replace(/America\/New_York/gi, "");
+    const safeMessage = String(error.message || "Please try again tomorrow.").replace(/calendar day/gi, "day").replace(/\s{2,}/g, " ");
     return message("playMessage", safeMessage, "error");
   }
 
@@ -395,7 +392,12 @@ function renderEye() {
     {count:10, name:"YOUR EYE", value:`${uniqueArtists} artists`, copy:`Your personal choice history across ${n} recorded calls.`},
     {count:25, name:"EXPLORER SIGNAL", value:`${explorerRate}%`, copy:`Discovery breadth: ${uniqueArtists} different artists across ${n} calls.`},
     {count:50, name:"TASTE PROFILE", value:`${repeatRate}%`, copy:"Repeat-interest rate: the share of calls beyond your first choice of each artist."},
-    {count:100, name:"FIVE INSIDER", value:`${n} calls`, copy:"Long-term history milestone reached. Your recorded calls remain available in YOUR CALLS."}
+    {count:100, name:"FIVE INSIDER", value:`${n} calls`, copy:"Long-term history milestone reached. Your recorded calls remain available in YOUR CALLS."},
+    {count:250, name:"COLLECTOR LEVEL", value:`${n} / 250`, copy:"Milestone rank for building a long-term discovery record."},
+    {count:500, name:"FIVE ICON", value:`${n} / 500`, copy:"Milestone rank for sustained participation in FIVE."},
+    {count:1000, name:"TASTE AUTHORITY", value:`${n} / 1,000`, copy:"Milestone rank for an extensive personal choice history."},
+    {count:3000, name:"CULTURE SHAPER", value:`${n} / 3,000`, copy:"Milestone rank for a substantial discovery history."},
+    {count:5000, name:"FIVE LEGEND", value:`${n} / 5,000`, copy:"The highest currently defined FIVE milestone."}
   ];
   metricCards.forEach(metric => {
     if (n >= metric.count) {
