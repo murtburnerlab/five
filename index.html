@@ -23,6 +23,12 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 .site-footer{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:22px 0 30px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px}.site-footer button,.site-footer a{border:0;background:none;padding:0;color:#111;font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
 @media(max-width:850px){.home{grid-template-columns:1fr;gap:45px}.grid{grid-template-columns:1fr 1fr}.card{min-height:280px}.call-card{grid-template-columns:55px 1fr 100px}.call-card .status{grid-column:2/4}.eye-grid{grid-template-columns:1fr}.eye-two{grid-template-columns:1fr}.rank-row{grid-template-columns:50px 1fr 90px}.rank-row .rank-choice{grid-column:3}}
 @media(max-width:520px){header{height:68px;padding:0 14px;gap:12px}.topnav{gap:13px;font-size:10px}.counter{display:none}main{padding:28px 15px 48px}.grid{grid-template-columns:1fr}.card{min-height:210px}.home-title{font-size:76px}.home{gap:36px;min-height:auto}.home-sub{font-size:17px}.stat-value{font-size:48px}.home-ranking-head{align-items:flex-start}.home-rank-name{font-size:14px}.site-footer{width:calc(100% - 30px);padding:20px 0 28px}.section-title{font-size:54px}.call-card{grid-template-columns:48px 1fr}.call-card .movement{grid-column:2;text-align:left}.call-card .status{grid-column:2}.rank-row{grid-template-columns:40px 1fr}.rank-row .rank-choice{grid-column:2;text-align:left}.rank-row .rank-choice:before{content:'CHOICES  '}}
+
+.home-panel{border:1px solid var(--line);padding:22px;align-self:start}
+.panel-row{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:16px 0;border-bottom:1px solid var(--line)}
+.panel-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.panel-value{font-size:16px;text-align:right;overflow-wrap:anywhere}
+
 </style>
 </head>
 <body>
@@ -35,19 +41,19 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </header>
 <main>
 <section id="home" class="view home">
-<div class="hero-copy">
-<div class="eyebrow">GLOBAL ARTIST DISCOVERY</div>
-<div class="home-title">DISCOVER.<br>CHOOSE.<br>RANK.</div>
-<div class="home-sub">A global ranking shaped by real choices.</div>
-<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button></div>
+<div>
+<div class="eyebrow">A people-powered artist discovery platform</div>
+<div class="home-title">HOW GOOD<br>IS YOUR EYE?</div>
+<div class="home-sub">Five artists. One choice. Build a record of what you see before everyone else does.</div>
+<div class="home-actions"><button class="primary" onclick="play()">MAKE YOUR CALL</button><button class="secondary" onclick="eye()">YOUR EYE</button></div>
 </div>
-<div class="home-data">
-<div class="global-stats">
-<div class="stat"><div class="panel-label">ARTISTS</div><div class="stat-value" id="globalArtists">—</div></div>
-<div class="stat"><div class="panel-label">CHOICES</div><div class="stat-value" id="globalChoices">—</div></div>
-</div>
-<div class="home-ranking-head"><span>GLOBAL TOP 5</span><button class="text-button" onclick="rankings()">VIEW FULL RANKING</button></div>
-<div id="homeTopFive" class="home-top-five"><div class="small">Loading live ranking…</div></div>
+<div class="home-panel">
+<div class="panel-row"><div class="panel-label">Account</div><div class="panel-value" id="homeAuth">Signed out</div></div>
+<div class="panel-row"><div class="panel-label">Your calls</div><div class="panel-value" id="homeCalls">0</div></div>
+<div class="panel-row"><div class="panel-label">Active calls</div><div class="panel-value" id="homeActive">0</div></div>
+<div class="panel-row"><div class="panel-label">Next unlock</div><div class="panel-value" id="homeUnlock">10 calls → YOUR EYE</div></div>
+<div class="panel-row"><div class="panel-label">Daily Five</div><div class="panel-value">Available</div></div>
+<p class="small" style="margin-top:20px">Your scores are based on your choices inside FIVE. This prototype uses simulated artist movement; production data will come from real user choices.</p>
 </div>
 </section>
 
@@ -89,6 +95,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </section>
 
 <section id="daily" class="view hidden">
+<div id="dailyStatus" class="small" role="status"></div>
 <div class="section-head"><div><div class="eyebrow">ONE SPECIAL CALL</div><div class="section-title">DAILY FIVE</div></div><div class="round" id="dailyLabel">TODAY</div></div>
 <div class="report" id="dailyIntro"><div class="eyebrow">DAILY BACKEND</div><h3>Daily Five is not live yet.</h3><div class="small">This section is reserved for a daily server-side round. Until that backend exists, FIVE will not fabricate daily results.</div></div>
 </section>
@@ -110,14 +117,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 
 <div id="modal" class="modal hidden" onclick="closeProfile()"><div class="modalbox" onclick="event.stopPropagation()"><div class="modaltop"><div class="eyebrow">ARTIST PROFILE</div><button class="close" onclick="closeProfile()">×</button></div><h2 id="profileName"></h2><div id="profileCountry" class="small"></div><p id="profileCopy"></p><a id="profileInstagram" href="#" target="_blank" rel="noopener" class="hidden">OPEN INSTAGRAM</a><a id="profileWebsite" href="#" target="_blank" rel="noopener" class="hidden">OPEN WEBSITE</a><br><button class="primary" id="profileChoose" onclick="chooseProfile()">CHOOSE THIS ARTIST</button></div></div>
 <script src="./app.js"></script>
-<script>
-function toggleAuthMode(){
-  const b=document.getElementById("authModeSwitch");
-  const toSignup=b.textContent.trim()==="CREATE ACCOUNT";
-  setAuthMode(toSignup?"signup":"signin");
-  b.textContent=toSignup?"BACK TO SIGN IN":"CREATE ACCOUNT";
-}
-</script>
+<script>function toggleAuthMode(){const b=document.getElementById("authModeSwitch");const toSignup=b.textContent.trim()==="CREATE ACCOUNT";setAuthMode(toSignup?"signup":"signin");b.textContent=toSignup?"BACK TO SIGN IN":"CREATE ACCOUNT";}</script>
 <script src="./five-auth-buttons.js"></script>
 <script src="./five-account-ui.js"></script>
 </body>
