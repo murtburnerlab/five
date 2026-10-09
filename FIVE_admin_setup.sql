@@ -282,7 +282,7 @@ commit;
 insert into public.five_admins (user_id)
 select id
 from auth.users
-where lower(email) = lower('YOUR_LOGIN_EMAIL_HERE')
+where lower(email) = lower('murtburner@gmail.com')
 on conflict (user_id) do nothing;
 
 -- Verify that exactly your account was made an admin:
