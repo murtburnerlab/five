@@ -16,6 +16,9 @@ let busy = false;
 let callsLoading = false;
 let isFiveAdmin = false;
 let adminBusy = false;
+let adminArtistRows = [];
+function fiveVisitorId(){try{let id=localStorage.getItem("five_visitor_id");if(!id){id=crypto.randomUUID?crypto.randomUUID():"v-"+Date.now()+Math.random().toString(36).slice(2);localStorage.setItem("five_visitor_id",id)}return id}catch(_){return "v-"+Date.now()+Math.random().toString(36).slice(2)}}
+function trackEvent(type){try{supabaseClient.rpc("five_track_event",{p_event_type:type,p_visitor_id:fiveVisitorId(),p_path:location.pathname}).then(({error})=>{if(error)console.warn("FIVE analytics failed",error.message)})}catch(_){}}
 
 function show(id) {
   views.forEach(v => $(v)?.classList.add("hidden"));
@@ -123,9 +126,11 @@ async function submitAuth() {
   if (!email || !password) return message("authMessage", "Enter an email and password.", "error");
 
   setButton("authSubmit", true, authMode === "signup" ? "CREATING..." : "SIGNING IN...");
-  const result = authMode === "signup"
+  const signupAttempt = authMode === "signup";
+  const result = signupAttempt
     ? await supabaseClient.auth.signUp({ email, password })
     : await supabaseClient.auth.signInWithPassword({ email, password });
+  if (!result.error) trackEvent(signupAttempt ? "account_signup" : "account_login");
   setButton("authSubmit", false);
 
   if (result.error) return message("authMessage", result.error.message, "error");
@@ -228,6 +233,7 @@ function normalizeRound(data) {
 
 async function play() {
   if (!signedIn()) return authView("Sign in to make a call.");
+  trackEvent("play_round");
   show("play");
   await newRound();
 }
@@ -486,6 +492,7 @@ function daily() {
 }
 
 async function rankings() {
+  trackEvent("ranking_view");
   show("rankings");
   await renderRankings();
 }
@@ -550,6 +557,7 @@ async function sendSubmission() {
   if (error) return message("submitMessage", error.message, "error");
 
   ["artistName", "artistCountry", "artistInstagram"].forEach(id => { if ($(id)) $(id).value = ""; });
+  trackEvent("artist_submission");
   message("submitMessage", "Artist submitted for FIVE review.", "success");
 }
 
@@ -623,7 +631,13 @@ function ensureAdminUI() {
           <div><div class="eyebrow">DATABASE</div><h3 style="margin:8px 0">ARTISTS</h3></div>
           <div class="small">Existing call history is preserved.</div>
         </div>
+        <div class="field" style="margin:12px 0 18px"><label for="adminArtistSearch">SEARCH BY ARTIST NAME</label><input id="adminArtistSearch" type="search" placeholder="Type an artist name…" oninput="filterAdminArtists()"></div>
         <div id="adminArtists"><div class="small">Loading artists…</div></div>
+      </div>
+      <div class="report" style="margin:22px 0">
+        <div class="section-head" style="margin-bottom:14px"><div><div class="eyebrow">PERFORMANCE</div><h3 style="margin:8px 0">STATISTICS</h3></div><button class="secondary" onclick="loadAdminStats()">REFRESH</button></div>
+        <div id="adminStats" class="small">Loading statistics…</div>
+        <div class="small" style="margin-top:14px">Visit tracking starts after this update is published. Historical visits before tracking was added are not available.</div>
       </div>`;
     main.appendChild(section);
   }
@@ -684,6 +698,7 @@ async function loadAdminData() {
     supabaseClient.rpc("admin_list_submissions"),
     supabaseClient.rpc("admin_list_artists")
   ]);
+  loadAdminStats();
 
   if (submissionsResult.error) {
     if (submissionsEl) submissionsEl.innerHTML = `<div class="small">Could not load submissions: ${escapeHtml(submissionsResult.error.message)}</div>`;
@@ -705,17 +720,26 @@ async function loadAdminData() {
   if (artistsResult.error) {
     if (artistsEl) artistsEl.innerHTML = `<div class="small">Could not load artists: ${escapeHtml(artistsResult.error.message)}</div>`;
   } else {
-    const rows = Array.isArray(artistsResult.data) ? artistsResult.data : [];
-    if (artistsEl) artistsEl.innerHTML = rows.length ? rows.map(row => `
-      <div class="panel-row" style="align-items:center">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div>
-          <div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
-          ${row.instagram_url ? `<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url) || "#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>` : `<div class="small">Instagram missing</div>`}
-        </div>
-        <button class="secondary" onclick="adminDeleteArtist('${escapeHtml(row.id)}')">REMOVE</button>
-      </div>`).join("") : `<div class="small">No artists in the database.</div>`;
+    adminArtistRows = Array.isArray(artistsResult.data) ? artistsResult.data : [];
+    filterAdminArtists();
   }
+}
+
+function filterAdminArtists(){
+ const el=$("adminArtists");if(!el)return;const q=String($("adminArtistSearch")?.value||"").trim().toLowerCase();
+ const rows=adminArtistRows.filter(r=>String(r.name||"").toLowerCase().includes(q));
+ el.innerHTML=rows.length?rows.map(row=>`<div class="panel-row" style="align-items:center;gap:12px"><div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div><div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>${row.instagram_url?`<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url)||"#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>`:`<div class="small">Instagram missing</div>`}</div><div style="display:flex;flex-direction:column;gap:8px"><button class="secondary" onclick="adminEditArtist('${escapeHtml(row.id)}')">EDIT</button><button class="secondary" onclick="adminDeleteArtist('${escapeHtml(row.id)}')">REMOVE</button></div></div>`).join(""):`<div class="small">No artists match this search.</div>`;
+}
+async function adminEditArtist(id){
+ if(!isFiveAdmin||adminBusy)return;const row=adminArtistRows.find(r=>r.id===id);if(!row)return;
+ const name=prompt("Artist name",row.name);if(name===null)return;const country=prompt("Country",row.country);if(country===null)return;const raw=prompt("Instagram username or URL",row.instagram_url||"");if(raw===null)return;
+ const instagram=normalizeInstagram(raw);if(!name.trim()||!country.trim()||!instagram)return adminNotice("Enter a valid name, country, and Instagram.","error");
+ adminBusy=true;try{const {error}=await supabaseClient.rpc("admin_update_artist",{p_artist_id:id,p_name:name.trim(),p_country:country.trim(),p_instagram_url:instagram});if(error)throw error;adminNotice("Artist information updated.","success");await loadAdminData();await loadHomeData()}catch(e){adminNotice(e.message||"Could not update artist.","error")}finally{adminBusy=false}
+}
+async function loadAdminStats(){
+ const el=$("adminStats");if(!isFiveAdmin||!el)return;el.innerHTML='<div class="small">Loading statistics…</div>';const {data,error}=await supabaseClient.rpc("admin_get_stats");
+ if(error){el.innerHTML='<div class="small">Could not load statistics: '+escapeHtml(error.message)+'</div>';return}const rows=Array.isArray(data)?data:[];
+ el.innerHTML=rows.length?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px">'+rows.map(r=>'<div style="border:1px solid var(--line,#d8d4cb);padding:14px"><div class="small">'+escapeHtml(r.metric)+'</div><div style="font-size:25px;font-weight:700;margin-top:8px">'+escapeHtml(Number(r.value||0).toLocaleString())+'</div></div>').join('')+'</div>':'<div class="small">No statistics available yet.</div>';
 }
 
 async function adminReviewSubmission(submissionId, decision) {
@@ -804,6 +828,7 @@ async function init() {
   await loadMyCalls();
   updateAuthUI();
   await refreshAdminAccess();
+  trackEvent("page_view");
   home();
 }
 
@@ -830,5 +855,8 @@ window.loadAdminData=loadAdminData;
 window.adminReviewSubmission=adminReviewSubmission;
 window.adminAddArtist=adminAddArtist;
 window.adminDeleteArtist=adminDeleteArtist;
+window.adminEditArtist=adminEditArtist;
+window.filterAdminArtists=filterAdminArtists;
+window.loadAdminStats=loadAdminStats;
 
 init();
