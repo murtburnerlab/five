@@ -314,10 +314,35 @@ async function choose(i) {
 
   $("chosen").textContent = a.name;
   $("chosenMeta").textContent = a.country || "Country not listed";
-  $("resultRank").textContent = "RECORDED";
-  $("resultStatus").textContent = "SAVED";
 
   await loadMyCalls();
+  const playCallCount = myCalls.filter(call => (call.mode || "play") === "play").length;
+  const milestones = [
+    { count: 10, title: "YOUR EYE" },
+    { count: 25, title: "EXPLORER SIGNAL" },
+    { count: 50, title: "TASTE PROFILE" },
+    { count: 100, title: "FIVE INSIDER" },
+    { count: 250, title: "COLLECTOR LEVEL" },
+    { count: 500, title: "FIVE ICON" },
+    { count: 1000, title: "TASTE AUTHORITY" },
+    { count: 3000, title: "CULTURE SHAPER" },
+    { count: 5000, title: "FIVE LEGEND" }
+  ];
+  const nextMilestone = milestones.find(m => playCallCount < m.count);
+  $("resultCount").textContent = playCallCount.toLocaleString();
+  if (nextMilestone) {
+    const remaining = nextMilestone.count - playCallCount;
+    const previousMilestone = [...milestones].reverse().find(m => playCallCount >= m.count);
+    const previousCount = previousMilestone ? previousMilestone.count : 0;
+    const progress = Math.max(0, Math.min(100, ((playCallCount - previousCount) / (nextMilestone.count - previousCount)) * 100));
+    $("nextCheck").textContent = `${remaining} ${remaining === 1 ? "CALL" : "CALLS"} → ${nextMilestone.title}`;
+    $("resultProgress").style.width = `${progress}%`;
+    $("progressCaption").textContent = `${remaining} more ${remaining === 1 ? "choice" : "choices"} to unlock ${nextMilestone.title}`;
+  } else {
+    $("nextCheck").textContent = "ALL CURRENT LEVELS UNLOCKED";
+    $("resultProgress").style.width = "100%";
+    $("progressCaption").textContent = "You have reached every current FIVE milestone. Keep discovering.";
+  }
   window.dispatchEvent(new CustomEvent("five:call-recorded"));
   busy = false;
   show("result");
