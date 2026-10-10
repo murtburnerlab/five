@@ -21,6 +21,8 @@ let adminSubmissionRows = [];
 let adminSubmissionPage = 1, adminSubmissionTotal = 0;
 let adminArtistPage = 1, adminArtistTotal = 0;
 const ADMIN_PAGE_SIZE = 20;
+let rankingPage = 1;
+const RANKING_PAGE_SIZE = 30;
 function fiveVisitorId(){try{let id=localStorage.getItem("five_visitor_id");if(!id){id=crypto.randomUUID?crypto.randomUUID():"v-"+Date.now()+Math.random().toString(36).slice(2);localStorage.setItem("five_visitor_id",id)}return id}catch(_){return "v-"+Date.now()+Math.random().toString(36).slice(2)}}
 function trackEvent(type){try{supabaseClient.rpc("five_track_event",{p_event_type:type,p_visitor_id:fiveVisitorId(),p_path:location.pathname}).then(({error})=>{if(error)console.warn("FIVE analytics failed",error.message)})}catch(_){}}
 
@@ -536,12 +538,16 @@ async function renderRankings() {
   filterRankings();
 }
 
-function filterRankings() {
+function filterRankings(resetPage = true) {
   const target = $("rankingResults");
   if (!target) return;
+  if (resetPage) rankingPage = 1;
   const query = String($("rankingSearch")?.value || "").trim().toLowerCase();
   const rows = (window.fiveRankingRows || []).filter(r => String(r.name || "").toLowerCase().includes(query));
-  target.innerHTML = rows.length ? rows.map(r => `
+  const totalPages = Math.max(1, Math.ceil(rows.length / RANKING_PAGE_SIZE));
+  rankingPage = Math.min(rankingPage, totalPages);
+  const visibleRows = rows.slice((rankingPage - 1) * RANKING_PAGE_SIZE, rankingPage * RANKING_PAGE_SIZE);
+  target.innerHTML = rows.length ? visibleRows.map(r => `
     <div class="rank-row">
       <div class="rank-num">#${escapeHtml(r.rank)}</div>
       <div><div class="rank-artist">${escapeHtml(r.name)}</div>
@@ -549,6 +555,26 @@ function filterRankings() {
       <div class="rank-choice">${escapeHtml(r.choices ?? 0)} choices</div>
       <div class="rank-choice">${r.instagram_url ? `<a href="${escapeHtml(normalizeInstagram(r.instagram_url))}" target="_blank" rel="noopener noreferrer">OPEN INSTAGRAM</a>` : '<span class="small">Instagram unavailable</span>'}</div>
     </div>`).join("") : '<div class="small">No artists match your search.</div>';
+  const existing = $("rankingPagination");
+  if (existing) existing.remove();
+  if (rows.length > RANKING_PAGE_SIZE) {
+    const pagination = document.createElement("div");
+    pagination.id = "rankingPagination";
+    pagination.style.cssText = "display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:20px 0 8px";
+    const first = (rankingPage - 1) * RANKING_PAGE_SIZE + 1;
+    const last = Math.min(rankingPage * RANKING_PAGE_SIZE, rows.length);
+    pagination.innerHTML = `<span class="small">Showing ${first}–${last} of ${rows.length} artists</span><div style="display:flex;align-items:center;gap:10px"><button class="secondary" ${rankingPage <= 1 ? "disabled" : ""} onclick="changeRankingPage(-1)">PREVIOUS</button><span class="small">PAGE ${rankingPage} / ${totalPages}</span><button class="secondary" ${rankingPage >= totalPages ? "disabled" : ""} onclick="changeRankingPage(1)">NEXT</button></div>`;
+    target.after(pagination);
+  }
+}
+
+function changeRankingPage(delta) {
+  const query = String($("rankingSearch")?.value || "").trim().toLowerCase();
+  const total = (window.fiveRankingRows || []).filter(r => String(r.name || "").toLowerCase().includes(query)).length;
+  const pages = Math.max(1, Math.ceil(total / RANKING_PAGE_SIZE));
+  rankingPage = Math.max(1, Math.min(pages, rankingPage + delta));
+  filterRankings(false);
+  $("rankings")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function submitArtist() {
@@ -882,6 +908,7 @@ window.eye=eye;
 window.daily=daily;
 window.rankings=rankings;
 window.filterRankings=filterRankings;
+window.changeRankingPage=changeRankingPage;
 window.submitArtist=submitArtist;
 window.authView=authView;
 window.setAuthMode=setAuthMode;
