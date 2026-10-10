@@ -7,9 +7,6 @@ const supabaseClient = window.supabase.createClient(
 const $ = id => document.getElementById(id);
 const views = ["home","auth","play","result","calls","eye","daily","rankings","submit","admin"];
 
-const RESTORABLE_VIEWS = new Set(["home","auth","calls","eye","daily","rankings","submit","admin"]);
-const LAST_VIEW_KEY = "five:lastRestorableView";
-
 let currentSession = null;
 let authMode = "signin";
 let currentRound = null;
@@ -21,6 +18,7 @@ let adminBusy = false;
 let adminArtistRows = [];
 let adminSubmissionRows = [];
 let adminSubmissionPage = 1, adminSubmissionTotal = 0;
+let adminArtistPage = 1, adminArtistTotal = 0;
 const ADMIN_PAGE_SIZE = 20;
 let rankingPage = 1;
 const RANKING_PAGE_SIZE = 30;
@@ -30,27 +28,6 @@ function trackEvent(type){try{supabaseClient.rpc("five_track_event",{p_event_typ
 function show(id) {
   views.forEach(v => $(v)?.classList.add("hidden"));
   $(id)?.classList.remove("hidden");
-  if (RESTORABLE_VIEWS.has(id)) {
-    try { localStorage.setItem(LAST_VIEW_KEY, id); } catch (_) {}
-  }
-}
-
-function restoreLastView() {
-  let lastView = "home";
-  try {
-    const saved = localStorage.getItem(LAST_VIEW_KEY);
-    if (RESTORABLE_VIEWS.has(saved)) lastView = saved;
-  } catch (_) {}
-  switch (lastView) {
-    case "auth": return authView();
-    case "calls": return viewCalls();
-    case "eye": return eye();
-    case "daily": return daily();
-    case "rankings": return rankings();
-    case "submit": return submitArtist();
-    case "admin": return openAdmin();
-    default: return home();
-  }
 }
 
 function message(id, text, type = "") {
@@ -194,6 +171,8 @@ async function loadHomeData() {
 
   if (list) list.innerHTML = `<div class="small">Loading live ranking…</div>`;
 
+  // Global counters use a dedicated public RPC so they do not depend on
+  // the ranking rows being returned or on the ranking request succeeding.
   const statsRequest = supabaseClient.rpc("get_public_stats")
     .then(({ data, error }) => {
       if (error) throw error;
@@ -343,6 +322,8 @@ async function choose(i) {
       return;
     }
 
+    // Confirm the successful server write immediately. Do not wait for the
+    // separate history query before allowing the player to continue.
     $("chosen").textContent = a.name;
     $("chosenMeta").textContent = a.country || "Country not listed";
 
@@ -382,6 +363,9 @@ async function choose(i) {
     show("result");
     window.dispatchEvent(new CustomEvent("five:call-recorded"));
     updateAuthUI();
+
+    // Refresh the full history in the background. It must not hold the game
+    // on "Recording your call..." after record_call has already succeeded.
     void loadMyCalls().catch(error => console.warn("FIVE history refresh failed:", error));
   } catch (error) {
     console.error("FIVE choice submission failed:", error);
@@ -720,6 +704,7 @@ async function shareFiveStory({title, subtitle, detail, type}) {
   try{if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})))await navigator.share({files:[file],title:"My FIVE Story",text:`${title} — ${subtitle}`});else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="five-story.png";a.click();URL.revokeObjectURL(a.href);alert("Story image saved. Upload it to Instagram Stories.");}}catch(e){if(e?.name!=="AbortError")alert("Could not share the story image. Please try again.");}
 }
 
+
 function ensureAdminUI() {
   if (!$("admin")) {
     const main = document.querySelector("main");
@@ -970,7 +955,7 @@ async function init() {
   updateAuthUI();
   await refreshAdminAccess();
   trackEvent("page_view");
-  restoreLastView();
+  home();
 }
 
 window.home=home;
