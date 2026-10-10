@@ -17,6 +17,12 @@ let callsLoading = false;
 let isFiveAdmin = false;
 let adminBusy = false;
 let adminArtistRows = [];
+let adminSubmissionRows = [];
+let adminSubmissionPage = 1, adminSubmissionTotal = 0;
+let adminArtistPage = 1, adminArtistTotal = 0;
+const ADMIN_PAGE_SIZE = 20;
+let rankingPage = 1;
+const RANKING_PAGE_SIZE = 30;
 function fiveVisitorId(){try{let id=localStorage.getItem("five_visitor_id");if(!id){id=crypto.randomUUID?crypto.randomUUID():"v-"+Date.now()+Math.random().toString(36).slice(2);localStorage.setItem("five_visitor_id",id)}return id}catch(_){return "v-"+Date.now()+Math.random().toString(36).slice(2)}}
 function trackEvent(type){try{supabaseClient.rpc("five_track_event",{p_event_type:type,p_visitor_id:fiveVisitorId(),p_path:location.pathname}).then(({error})=>{if(error)console.warn("FIVE analytics failed",error.message)})}catch(_){}}
 
@@ -532,12 +538,16 @@ async function renderRankings() {
   filterRankings();
 }
 
-function filterRankings() {
+function filterRankings(resetPage = true) {
   const target = $("rankingResults");
   if (!target) return;
+  if (resetPage) rankingPage = 1;
   const query = String($("rankingSearch")?.value || "").trim().toLowerCase();
   const rows = (window.fiveRankingRows || []).filter(r => String(r.name || "").toLowerCase().includes(query));
-  target.innerHTML = rows.length ? rows.map(r => `
+  const totalPages = Math.max(1, Math.ceil(rows.length / RANKING_PAGE_SIZE));
+  rankingPage = Math.min(rankingPage, totalPages);
+  const visibleRows = rows.slice((rankingPage - 1) * RANKING_PAGE_SIZE, rankingPage * RANKING_PAGE_SIZE);
+  target.innerHTML = rows.length ? visibleRows.map(r => `
     <div class="rank-row">
       <div class="rank-num">#${escapeHtml(r.rank)}</div>
       <div><div class="rank-artist">${escapeHtml(r.name)}</div>
@@ -545,6 +555,26 @@ function filterRankings() {
       <div class="rank-choice">${escapeHtml(r.choices ?? 0)} choices</div>
       <div class="rank-choice">${r.instagram_url ? `<a href="${escapeHtml(normalizeInstagram(r.instagram_url))}" target="_blank" rel="noopener noreferrer">OPEN INSTAGRAM</a>` : '<span class="small">Instagram unavailable</span>'}</div>
     </div>`).join("") : '<div class="small">No artists match your search.</div>';
+  const existing = $("rankingPagination");
+  if (existing) existing.remove();
+  if (rows.length > RANKING_PAGE_SIZE) {
+    const pagination = document.createElement("div");
+    pagination.id = "rankingPagination";
+    pagination.style.cssText = "display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:20px 0 8px";
+    const first = (rankingPage - 1) * RANKING_PAGE_SIZE + 1;
+    const last = Math.min(rankingPage * RANKING_PAGE_SIZE, rows.length);
+    pagination.innerHTML = `<span class="small">Showing ${first}–${last} of ${rows.length} artists</span><div style="display:flex;align-items:center;gap:10px"><button class="secondary" ${rankingPage <= 1 ? "disabled" : ""} onclick="changeRankingPage(-1)">PREVIOUS</button><span class="small">PAGE ${rankingPage} / ${totalPages}</span><button class="secondary" ${rankingPage >= totalPages ? "disabled" : ""} onclick="changeRankingPage(1)">NEXT</button></div>`;
+    target.after(pagination);
+  }
+}
+
+function changeRankingPage(delta) {
+  const query = String($("rankingSearch")?.value || "").trim().toLowerCase();
+  const total = (window.fiveRankingRows || []).filter(r => String(r.name || "").toLowerCase().includes(query)).length;
+  const pages = Math.max(1, Math.ceil(total / RANKING_PAGE_SIZE));
+  rankingPage = Math.max(1, Math.min(pages, rankingPage + delta));
+  filterRankings(false);
+  $("rankings")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function submitArtist() {
@@ -559,9 +589,11 @@ async function sendSubmission() {
   const name = $("artistName").value.trim();
   const country = $("artistCountry").value.trim();
   const instagram_url = normalizeInstagram($("artistInstagram").value);
+  const email = $("artistEmail").value.trim().toLowerCase();
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  if (!name || !country || !instagram_url) {
-    return message("submitMessage", "Artist name, country, and Instagram are required.", "error");
+  if (!name || !country || !instagram_url || !validEmail) {
+    return message("submitMessage", "Artist name, country, a valid Instagram, and a valid email are required.", "error");
   }
 
   setButton("submitArtistButton", true, "SENDING...");
@@ -569,15 +601,16 @@ async function sendSubmission() {
     submitted_by: currentSession.user.id,
     name,
     country,
-    instagram_url
+    instagram_url,
+    email
   });
   setButton("submitArtistButton", false);
 
   if (error) return message("submitMessage", error.message, "error");
 
-  ["artistName", "artistCountry", "artistInstagram"].forEach(id => { if ($(id)) $(id).value = ""; });
+  ["artistName", "artistCountry", "artistInstagram", "artistEmail"].forEach(id => { if ($(id)) $(id).value = "" });
   trackEvent("artist_submission");
-  message("submitMessage", "Artist submitted for FIVE review.", "success");
+  message("submitMessage", "Artist submitted for FIVE review. The email address will be used to communicate the review result.", "success");
 }
 
 async function shareEye() {
@@ -643,15 +676,20 @@ function ensureAdminUI() {
           <div><div class="eyebrow">REVIEW QUEUE</div><h3 style="margin:8px 0">SUBMISSIONS</h3></div>
           <button class="secondary" onclick="loadAdminData()">REFRESH</button>
         </div>
+        <div class="field" style="margin:12px 0"><label for="adminSubmissionSearch">SEARCH NAME OR EMAIL</label><input id="adminSubmissionSearch" type="search" placeholder="Search submissions…" oninput="searchAdminSubmissions()"></div>
+        <div class="field" style="margin:12px 0 18px"><label for="adminSubmissionStatus">STATUS</label><select id="adminSubmissionStatus" onchange="changeSubmissionStatus()"><option value="pending">PENDING REVIEW</option><option value="approved">APPROVED</option><option value="rejected">REJECTED</option><option value="all">ALL SUBMISSIONS</option></select></div>
         <div id="adminSubmissions"><div class="small">Loading submissions…</div></div>
+        <div id="adminSubmissionPagination" class="admin-pagination"></div>
       </div>
       <div class="report" style="margin:22px 0">
         <div class="section-head" style="margin-bottom:14px">
           <div><div class="eyebrow">DATABASE</div><h3 style="margin:8px 0">ARTISTS</h3></div>
           <div class="small">Existing call history is preserved.</div>
         </div>
-        <div class="field" style="margin:12px 0 18px"><label for="adminArtistSearch">SEARCH BY ARTIST NAME</label><input id="adminArtistSearch" type="search" placeholder="Type an artist name…" oninput="filterAdminArtists()"></div>
+        <div class="field" style="margin:12px 0 18px"><label for="adminArtistSearch">SEARCH BY ARTIST NAME</label><input id="adminArtistSearch" type="search" placeholder="Type an artist name…" oninput="searchAdminArtists()"></div>
+        <div class="field" style="margin:12px 0 18px"><label for="adminArtistStatus">STATUS</label><select id="adminArtistStatus" onchange="changeArtistStatus()"><option value="approved">APPROVED</option><option value="pending">PENDING</option><option value="rejected">REJECTED</option><option value="all">ALL ARTISTS</option></select></div>
         <div id="adminArtists"><div class="small">Loading artists…</div></div>
+        <div id="adminArtistPagination" class="admin-pagination"></div>
       </div>
       <div class="report" style="margin:22px 0">
         <div class="section-head" style="margin-bottom:14px"><div><div class="eyebrow">PERFORMANCE</div><h3 style="margin:8px 0">STATISTICS</h3></div><button class="secondary" onclick="loadAdminStats()">REFRESH</button></div>
@@ -707,48 +745,48 @@ function adminNotice(text, type = "") {
 
 async function loadAdminData() {
   if (!isFiveAdmin) return adminNotice("Admin access is required.", "error");
-  const submissionsEl = $("adminSubmissions");
-  const artistsEl = $("adminArtists");
-  if (submissionsEl) submissionsEl.innerHTML = `<div class="small">Loading submissions…</div>`;
-  if (artistsEl) artistsEl.innerHTML = `<div class="small">Loading artists…</div>`;
   adminNotice("");
-
-  const [submissionsResult, artistsResult] = await Promise.all([
-    supabaseClient.rpc("admin_list_submissions"),
-    supabaseClient.rpc("admin_list_artists")
-  ]);
+  await Promise.all([loadAdminSubmissions(), loadAdminArtists()]);
   loadAdminStats();
-
-  if (submissionsResult.error) {
-    if (submissionsEl) submissionsEl.innerHTML = `<div class="small">Could not load submissions: ${escapeHtml(submissionsResult.error.message)}</div>`;
-  } else {
-    const rows = Array.isArray(submissionsResult.data) ? submissionsResult.data : [];
-    const pending = rows.filter(row => row.status === "pending").length;
-    if ($("adminSummary")) $("adminSummary").textContent = `${pending} PENDING`;
-    submissionsEl.innerHTML = rows.length ? rows.map(row => `
-      <div class="panel-row" style="align-items:center">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div>
-          <div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
-          ${row.instagram_url ? `<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url) || "#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>` : `<div class="small">Instagram missing</div>`}
-        </div>
-        ${row.status === "pending" ? `<div style="display:flex;flex-direction:column;gap:8px"><button class="primary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','approved')">APPROVE</button><button class="secondary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','rejected')">REJECT</button></div>` : ""}
-      </div>`).join("") : `<div class="small">No submissions yet.</div>`;
-  }
-
-  if (artistsResult.error) {
-    if (artistsEl) artistsEl.innerHTML = `<div class="small">Could not load artists: ${escapeHtml(artistsResult.error.message)}</div>`;
-  } else {
-    adminArtistRows = Array.isArray(artistsResult.data) ? artistsResult.data : [];
-    filterAdminArtists();
-  }
 }
-
-function filterAdminArtists(){
- const el=$("adminArtists");if(!el)return;const q=String($("adminArtistSearch")?.value||"").trim().toLowerCase();
- const rows=adminArtistRows.filter(r=>String(r.name||"").toLowerCase().includes(q));
- el.innerHTML=rows.length?rows.map(row=>`<div class="panel-row" style="align-items:center;gap:12px"><div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div><div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>${row.instagram_url?`<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url)||"#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>`:`<div class="small">Instagram missing</div>`}</div><div style="display:flex;flex-direction:column;gap:8px"><button class="secondary" onclick="adminEditArtist('${escapeHtml(row.id)}')">EDIT</button><button class="secondary" onclick="adminDeleteArtist('${escapeHtml(row.id)}')">REMOVE</button></div></div>`).join(""):`<div class="small">No artists match this search.</div>`;
+async function loadAdminSubmissions() {
+  const el=$("adminSubmissions");if(!el||!isFiveAdmin)return;el.innerHTML='<div class="small">Loading submissions…</div>';
+  const status=$("adminSubmissionStatus")?.value||"pending",search=$("adminSubmissionSearch")?.value||"";
+  const {data,error}=await supabaseClient.rpc("admin_list_submissions_page",{p_page:adminSubmissionPage,p_page_size:ADMIN_PAGE_SIZE,p_status:status,p_search:search});
+  if(error){el.innerHTML='<div class="small">Could not load submissions: '+escapeHtml(error.message)+'</div>';return}
+  const result=typeof data==="string"?JSON.parse(data):data,rows=Array.isArray(result?.rows)?result.rows:[];
+  adminSubmissionRows=rows;adminSubmissionTotal=Number(result?.total_count||0);
+  if($("adminSummary"))$("adminSummary").textContent=adminSubmissionTotal+" "+status.toUpperCase();
+  el.innerHTML=rows.length?rows.map(row=>`
+    <div class="panel-row" style="align-items:center"><div style="flex:1;min-width:0">
+      <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div><div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
+      <div class="small" style="margin-top:5px">Email: ${escapeHtml(row.email||"Not provided")}</div>
+      ${row.status!=="pending"?`<div class="small" style="margin-top:5px">Notification: ${escapeHtml(String(row.notification_status||"not_sent").replaceAll("_"," ").toUpperCase())}${row.notification_error?` · ${escapeHtml(row.notification_error)}`:""}</div>`:""}
+      ${row.instagram_url?`<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url)||"#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>`:`<div class="small">Instagram missing</div>`}
+    </div>${row.status==="pending"?`<div style="display:flex;flex-direction:column;gap:8px"><button class="primary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','approved')">APPROVE</button><button class="secondary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','rejected')">REJECT</button></div>`:""}</div>`).join(""):'<div class="small">No submissions found for this filter.</div>';
+  renderAdminPagination("adminSubmissionPagination",adminSubmissionPage,adminSubmissionTotal,"changeSubmissionPage");
 }
+function renderAdminPagination(id,page,total,callback){
+ const el=$(id);if(!el)return;const pages=Math.max(1,Math.ceil(total/ADMIN_PAGE_SIZE)),first=total?(page-1)*ADMIN_PAGE_SIZE+1:0,last=Math.min(page*ADMIN_PAGE_SIZE,total);
+ el.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-top:16px"><span class="small">Showing ${first}–${last} of ${total}</span><div style="display:flex;align-items:center;gap:10px"><button class="secondary" ${page<=1?"disabled":""} onclick="${callback}(-1)">PREVIOUS</button><span class="small">PAGE ${page} / ${pages}</span><button class="secondary" ${page>=pages?"disabled":""} onclick="${callback}(1)">NEXT</button></div></div>`;
+}
+function searchAdminSubmissions(){adminSubmissionPage=1;loadAdminSubmissions()}
+function changeSubmissionStatus(){adminSubmissionPage=1;loadAdminSubmissions()}
+function changeSubmissionPage(delta){adminSubmissionPage=Math.max(1,adminSubmissionPage+delta);loadAdminSubmissions()}
+async function loadAdminArtists(){
+ const el=$("adminArtists");if(!el||!isFiveAdmin)return;el.innerHTML='<div class="small">Loading artists…</div>';
+ const status=$("adminArtistStatus")?.value||"approved",search=$("adminArtistSearch")?.value||"";
+ const {data,error}=await supabaseClient.rpc("admin_list_artists_page",{p_page:adminArtistPage,p_page_size:ADMIN_PAGE_SIZE,p_status:status,p_search:search});
+ if(error){el.innerHTML='<div class="small">Could not load artists: '+escapeHtml(error.message)+'</div>';return}
+ const result=typeof data==="string"?JSON.parse(data):data;adminArtistRows=Array.isArray(result?.rows)?result.rows:[];adminArtistTotal=Number(result?.total_count||0);
+ el.innerHTML=adminArtistRows.length?adminArtistRows.map(row=>`<div class="panel-row" style="align-items:center;gap:12px"><div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div><div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>${row.instagram_url?`<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url)||"#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>`:`<div class="small">Instagram missing</div>`}</div><div style="display:flex;flex-direction:column;gap:8px"><button class="secondary" onclick="adminEditArtist('${escapeHtml(row.id)}')">EDIT</button><button class="secondary" onclick="adminDeleteArtist('${escapeHtml(row.id)}')">REMOVE</button></div></div>`).join(""):'<div class="small">No artists match this filter.</div>';
+ renderAdminPagination("adminArtistPagination",adminArtistPage,adminArtistTotal,"changeArtistPage");
+}
+function searchAdminArtists(){adminArtistPage=1;loadAdminArtists()}
+function changeArtistStatus(){adminArtistPage=1;loadAdminArtists()}
+function changeArtistPage(delta){adminArtistPage=Math.max(1,adminArtistPage+delta);loadAdminArtists()}
+function filterAdminArtists(){loadAdminArtists()}
+
 async function adminEditArtist(id){
  if(!isFiveAdmin||adminBusy)return;const row=adminArtistRows.find(r=>r.id===id);if(!row)return;
  const name=prompt("Artist name",row.name);if(name===null)return;const country=prompt("Country",row.country);if(country===null)return;const raw=prompt("Instagram username or URL",row.instagram_url||"");if(raw===null)return;
@@ -773,7 +811,20 @@ async function adminReviewSubmission(submissionId, decision) {
       p_decision: decision
     });
     if (error) throw error;
-    adminNotice(decision === "approved" ? "Artist approved and added to the database." : "Submission rejected.", "success");
+    let emailResult = null;
+    const { data: notificationData, error: notificationError } = await supabaseClient.functions.invoke("five-send-review-email", {
+      body: { submission_id: submissionId }
+    });
+    if (notificationError) {
+      emailResult = "Decision saved. Email notification could not run: " + notificationError.message;
+    } else if (notificationData?.status === "sent") {
+      emailResult = "Decision saved and notification email sent.";
+    } else if (notificationData?.status === "not_configured") {
+      emailResult = "Decision saved. Email delivery is prepared but not active until the email provider is configured.";
+    } else {
+      emailResult = "Decision saved. Email status: " + String(notificationData?.status || "unknown") + (notificationData?.error ? " — " + notificationData.error : "");
+    }
+    adminNotice((decision === "approved" ? "Artist approved and added to the database. " : "Submission rejected. ") + emailResult, "success");
     await loadAdminData();
     await loadHomeData();
   } catch (error) {
@@ -857,6 +908,7 @@ window.eye=eye;
 window.daily=daily;
 window.rankings=rankings;
 window.filterRankings=filterRankings;
+window.changeRankingPage=changeRankingPage;
 window.submitArtist=submitArtist;
 window.authView=authView;
 window.setAuthMode=setAuthMode;
@@ -877,6 +929,12 @@ window.adminAddArtist=adminAddArtist;
 window.adminDeleteArtist=adminDeleteArtist;
 window.adminEditArtist=adminEditArtist;
 window.filterAdminArtists=filterAdminArtists;
+window.searchAdminSubmissions=searchAdminSubmissions;
+window.changeSubmissionStatus=changeSubmissionStatus;
+window.changeSubmissionPage=changeSubmissionPage;
+window.searchAdminArtists=searchAdminArtists;
+window.changeArtistStatus=changeArtistStatus;
+window.changeArtistPage=changeArtistPage;
 window.loadAdminStats=loadAdminStats;
 
 init();
