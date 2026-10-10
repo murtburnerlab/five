@@ -296,59 +296,91 @@ function renderRound() {
 async function choose(i) {
   const a = currentRound?.artists[i];
   if (!a || busy) return;
+
+  const callsBefore = myCalls.filter(call => (call.mode || "play") === "play").length;
   busy = true;
   document.querySelectorAll(".choose").forEach(b => b.disabled = true);
   message("playMessage", "Recording your call...");
 
-  const { error } = await supabaseClient.rpc("record_call", {
-    p_round_id: currentRound.roundId,
-    p_artist_id: a.id,
-    p_rank_at_choice: null
-  });
+  try {
+    const rpcRequest = supabaseClient.rpc("record_call", {
+      p_round_id: currentRound.roundId,
+      p_artist_id: a.id,
+      p_rank_at_choice: null
+    });
 
-  if (error) {
+    const result = await Promise.race([
+      rpcRequest,
+      new Promise((_, reject) => setTimeout(
+        () => reject(new Error("The server did not respond in time. Check YOUR CALLS before repeating this choice.")),
+        15000
+      ))
+    ]);
+
+    if (result.error) {
+      message("playMessage", result.error.message, "error");
+      return;
+    }
+
+    // Confirm the successful server write immediately. Do not wait for the
+    // separate history query before allowing the player to continue.
+    $("chosen").textContent = a.name;
+    $("chosenMeta").textContent = a.country || "Country not listed";
+
+    const refreshedCount = myCalls.filter(call => (call.mode || "play") === "play").length;
+    const playCallCount = Math.max(refreshedCount, callsBefore + 1);
+    const milestones = [
+      { count: 10, title: "YOUR EYE" },
+      { count: 25, title: "EXPLORER SIGNAL" },
+      { count: 50, title: "TASTE PROFILE" },
+      { count: 100, title: "FIVE INSIDER" },
+      { count: 250, title: "COLLECTOR LEVEL" },
+      { count: 500, title: "FIVE ICON" },
+      { count: 1000, title: "TASTE AUTHORITY" },
+      { count: 3000, title: "CULTURE SHAPER" },
+      { count: 5000, title: "FIVE LEGEND" }
+    ];
+    const nextMilestone = milestones.find(m => playCallCount < m.count);
+    $("resultCount").textContent = playCallCount.toLocaleString();
+
+    if (nextMilestone) {
+      const remaining = nextMilestone.count - playCallCount;
+      const previousMilestone = [...milestones].reverse().find(m => playCallCount >= m.count);
+      const previousCount = previousMilestone ? previousMilestone.count : 0;
+      const progress = Math.max(0, Math.min(100,
+        ((playCallCount - previousCount) / (nextMilestone.count - previousCount)) * 100
+      ));
+      $("nextCheck").textContent = `${remaining} ${remaining === 1 ? "CALL" : "CALLS"} → ${nextMilestone.title}`;
+      $("resultProgress").style.width = `${progress}%`;
+      $("progressCaption").textContent = `${remaining} more ${remaining === 1 ? "choice" : "choices"} to unlock ${nextMilestone.title}`;
+    } else {
+      $("nextCheck").textContent = "ALL CURRENT LEVELS UNLOCKED";
+      $("resultProgress").style.width = "100%";
+      $("progressCaption").textContent = "All current milestones reached. Keep discovering.";
+    }
+
+    message("playMessage", "");
+    show("result");
+    window.dispatchEvent(new CustomEvent("five:call-recorded"));
+    updateAuthUI();
+
+    // Refresh the full history in the background. It must not hold the game
+    // on "Recording your call..." after record_call has already succeeded.
+    void loadMyCalls().catch(error => console.warn("FIVE history refresh failed:", error));
+  } catch (error) {
+    console.error("FIVE choice submission failed:", error);
+    message(
+      "playMessage",
+      /did not respond in time/i.test(String(error?.message || ""))
+        ? "The server is taking too long to respond. Check YOUR CALLS before repeating this choice."
+        : (error?.message || "Could not save this choice. Please try again."),
+      "error"
+    );
+  } finally {
     busy = false;
     document.querySelectorAll(".choose").forEach(b => b.disabled = false);
-    return message("playMessage", error.message, "error");
   }
-
-  $("chosen").textContent = a.name;
-  $("chosenMeta").textContent = a.country || "Country not listed";
-
-  await loadMyCalls();
-  const playCallCount = myCalls.filter(call => (call.mode || "play") === "play").length;
-  const milestones = [
-    { count: 10, title: "YOUR EYE" },
-    { count: 25, title: "EXPLORER SIGNAL" },
-    { count: 50, title: "TASTE PROFILE" },
-    { count: 100, title: "FIVE INSIDER" },
-    { count: 250, title: "COLLECTOR LEVEL" },
-    { count: 500, title: "FIVE ICON" },
-    { count: 1000, title: "TASTE AUTHORITY" },
-    { count: 3000, title: "CULTURE SHAPER" },
-    { count: 5000, title: "FIVE LEGEND" }
-  ];
-  const nextMilestone = milestones.find(m => playCallCount < m.count);
-  $("resultCount").textContent = playCallCount.toLocaleString();
-  if (nextMilestone) {
-    const remaining = nextMilestone.count - playCallCount;
-    const previousMilestone = [...milestones].reverse().find(m => playCallCount >= m.count);
-    const previousCount = previousMilestone ? previousMilestone.count : 0;
-    const progress = Math.max(0, Math.min(100, ((playCallCount - previousCount) / (nextMilestone.count - previousCount)) * 100));
-    $("nextCheck").textContent = `${remaining} ${remaining === 1 ? "CALL" : "CALLS"} → ${nextMilestone.title}`;
-    $("resultProgress").style.width = `${progress}%`;
-    $("progressCaption").textContent = `${remaining} more ${remaining === 1 ? "choice" : "choices"} to unlock ${nextMilestone.title}`;
-  } else {
-    $("nextCheck").textContent = "ALL CURRENT LEVELS UNLOCKED";
-    $("resultProgress").style.width = "100%";
-    $("progressCaption").textContent = "You have reached every current FIVE milestone. Keep discovering.";
-  }
-  window.dispatchEvent(new CustomEvent("five:call-recorded"));
-  busy = false;
-  show("result");
-  updateAuthUI();
 }
-
 function nextRound() { play(); }
 
 async function loadMyCalls() {
