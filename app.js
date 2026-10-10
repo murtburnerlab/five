@@ -559,9 +559,11 @@ async function sendSubmission() {
   const name = $("artistName").value.trim();
   const country = $("artistCountry").value.trim();
   const instagram_url = normalizeInstagram($("artistInstagram").value);
+  const email = $("artistEmail").value.trim().toLowerCase();
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  if (!name || !country || !instagram_url) {
-    return message("submitMessage", "Artist name, country, and Instagram are required.", "error");
+  if (!name || !country || !instagram_url || !validEmail) {
+    return message("submitMessage", "Artist name, country, a valid Instagram, and a valid email are required.", "error");
   }
 
   setButton("submitArtistButton", true, "SENDING...");
@@ -569,15 +571,16 @@ async function sendSubmission() {
     submitted_by: currentSession.user.id,
     name,
     country,
-    instagram_url
+    instagram_url,
+    email
   });
   setButton("submitArtistButton", false);
 
   if (error) return message("submitMessage", error.message, "error");
 
-  ["artistName", "artistCountry", "artistInstagram"].forEach(id => { if ($(id)) $(id).value = ""; });
+  ["artistName", "artistCountry", "artistInstagram", "artistEmail"].forEach(id => { if ($(id)) $(id).value = "" });
   trackEvent("artist_submission");
-  message("submitMessage", "Artist submitted for FIVE review.", "success");
+  message("submitMessage", "Artist submitted for FIVE review. The email address will be used to communicate the review result.", "success");
 }
 
 async function shareEye() {
@@ -730,6 +733,8 @@ async function loadAdminData() {
         <div style="flex:1;min-width:0">
           <div style="font-size:16px;font-weight:700">${escapeHtml(row.name)}</div>
           <div class="small">${escapeHtml(row.country)} · ${escapeHtml(row.status)}</div>
+          <div class="small" style="margin-top:5px">Email: ${escapeHtml(row.email || "Not provided")}</div>
+          ${row.status !== "pending" ? `<div class="small" style="margin-top:5px">Notification: ${escapeHtml(String(row.notification_status || "not_sent").replaceAll("_", " ").toUpperCase())}${row.notification_error ? ` · ${escapeHtml(row.notification_error)}` : ""}</div>` : ""}
           ${row.instagram_url ? `<a style="display:inline-block;margin-top:8px" href="${escapeHtml(normalizeInstagram(row.instagram_url) || "#")}" target="_blank" rel="noopener">OPEN INSTAGRAM</a>` : `<div class="small">Instagram missing</div>`}
         </div>
         ${row.status === "pending" ? `<div style="display:flex;flex-direction:column;gap:8px"><button class="primary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','approved')">APPROVE</button><button class="secondary" onclick="adminReviewSubmission('${escapeHtml(row.id)}','rejected')">REJECT</button></div>` : ""}
@@ -773,7 +778,20 @@ async function adminReviewSubmission(submissionId, decision) {
       p_decision: decision
     });
     if (error) throw error;
-    adminNotice(decision === "approved" ? "Artist approved and added to the database." : "Submission rejected.", "success");
+    let emailResult = null;
+    const { data: notificationData, error: notificationError } = await supabaseClient.functions.invoke("five-send-review-email", {
+      body: { submission_id: submissionId }
+    });
+    if (notificationError) {
+      emailResult = "Decision saved. Email notification could not run: " + notificationError.message;
+    } else if (notificationData?.status === "sent") {
+      emailResult = "Decision saved and notification email sent.";
+    } else if (notificationData?.status === "not_configured") {
+      emailResult = "Decision saved. Email delivery is prepared but not active until the email provider is configured.";
+    } else {
+      emailResult = "Decision saved. Email status: " + String(notificationData?.status || "unknown") + (notificationData?.error ? " — " + notificationData.error : "");
+    }
+    adminNotice((decision === "approved" ? "Artist approved and added to the database. " : "Submission rejected. ") + emailResult, "success");
     await loadAdminData();
     await loadHomeData();
   } catch (error) {
