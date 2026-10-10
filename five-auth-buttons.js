@@ -1,4 +1,4 @@
-/* FIVE social authentication buttons — loaded after app.js */
+/* FIVE social authentication — Google only, loaded after app.js */
 (() => {
   const section = document.getElementById('auth');
   const actions = section?.querySelector('.auth-actions');
@@ -9,12 +9,12 @@
     #fiveSocialAuth{margin-top:18px}
     #fiveSocialAuth .five-auth-divider{display:flex;align-items:center;gap:12px;margin:0 0 12px;color:#77736c;font-size:10px;letter-spacing:.13em}
     #fiveSocialAuth .five-auth-divider:before,#fiveSocialAuth .five-auth-divider:after{content:"";height:1px;background:#d6d2ca;flex:1}
-    #fiveSocialAuth .five-auth-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    #fiveSocialAuth .five-auth-buttons{display:grid;grid-template-columns:1fr;gap:8px}
     #fiveSocialAuth button{min-height:54px;width:100%;border:1px solid #111;background:transparent;color:#111;padding:12px 8px;font:10px Arial,Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
     #fiveSocialAuth button:disabled{opacity:.55;cursor:wait}
     #fiveSocialAuth button:hover{background:#e7e4dd}
     #fiveSocialAuth .five-auth-error{display:none;margin-top:12px;color:#7a3535;font-size:12px;line-height:1.4}
-    @media(max-width:520px){#fiveSocialAuth .five-auth-buttons{grid-template-columns:1fr 1fr}#fiveSocialAuth button{font-size:9px;letter-spacing:.04em}}
+    @media(max-width:520px){#fiveSocialAuth button{font-size:10px;letter-spacing:.06em}}
   `;
   document.head.appendChild(style);
 
@@ -24,7 +24,6 @@
     <div class="five-auth-divider">OR CONTINUE WITH</div>
     <div class="five-auth-buttons">
       <button type="button" id="fiveGoogleAuth">CONTINUE WITH GOOGLE</button>
-      <button type="button" id="fiveAppleAuth">CONTINUE WITH APPLE</button>
     </div>
     <div class="five-auth-error" id="fiveSocialAuthError" role="status"></div>
   `;
@@ -60,5 +59,4 @@
   }
 
   document.getElementById('fiveGoogleAuth').addEventListener('click', () => signIn('google', 'fiveGoogleAuth'));
-  document.getElementById('fiveAppleAuth').addEventListener('click', () => signIn('apple', 'fiveAppleAuth'));
 })();
