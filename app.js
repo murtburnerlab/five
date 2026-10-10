@@ -10,7 +10,6 @@ const views = ["home","auth","play","result","calls","eye","daily","rankings","s
 let currentSession = null;
 let authMode = "signin";
 let currentRound = null;
-let profileIndex = -1;
 let myCalls = [];
 let busy = false;
 let callsLoading = false;
@@ -29,7 +28,6 @@ function trackEvent(type){try{supabaseClient.rpc("five_track_event",{p_event_typ
 function show(id) {
   views.forEach(v => $(v)?.classList.add("hidden"));
   $(id)?.classList.remove("hidden");
-  closeProfile();
 }
 
 function message(id, text, type = "") {
@@ -276,46 +274,30 @@ async function newRound() {
 }
 
 function renderRound() {
-  $("grid").innerHTML = currentRound.artists.map((a,i) => `
-    <article class="card">
-      <div class="number">0${i+1}</div>
-      <div class="name">${escapeHtml(a.name)}</div>
-      <div class="country">${escapeHtml(a.country || "Country not listed")}</div>
-      <div class="card-actions">
-        <button class="profile" onclick="openProfile(${i})">PROFILE</button>
-        <button class="choose" onclick="choose(${i})">CHOOSE</button>
-      </div>
-    </article>`).join("");
-}
-
-function openProfile(i) {
-  const a = currentRound?.artists[i];
-  if (!a) return;
-  profileIndex = i;
-  $("profileName").textContent = a.name;
-  $("profileCountry").textContent = a.country || "Country not listed";
-  const ig = url(a.instagramUrl);
-  $("profileCopy").textContent = ig ? "Instagram profile" : "No Instagram link provided.";
-  $("profileInstagram").href = ig || "#";
-  $("profileInstagram").classList.toggle("hidden", !ig);
-  if ($("profileWebsite")) $("profileWebsite").classList.add("hidden");
-  $("modal").classList.remove("hidden");
-}
-
-function closeProfile() {
-  $("modal")?.classList.add("hidden");
-  profileIndex = -1;
-}
-
-function chooseProfile() {
-  if (profileIndex >= 0) choose(profileIndex);
+  $("grid").innerHTML = currentRound.artists.map((a, i) => {
+    const instagram = url(a.instagramUrl);
+    return `
+      <article class="card">
+        <div class="number">0${i + 1}</div>
+        <div class="card-content">
+          <div class="name">${escapeHtml(a.name)}</div>
+          <div class="country">${escapeHtml(a.country || "Country not listed")}</div>
+        </div>
+        <div class="card-actions">
+          ${instagram
+            ? `<a class="instagram" href="${escapeHtml(instagram)}" target="_blank" rel="noopener">INSTAGRAM</a>`
+            : `<span class="instagram instagram-disabled" aria-disabled="true">INSTAGRAM</span>`}
+          <button class="choose" onclick="choose(${i})">CHOOSE</button>
+        </div>
+      </article>`;
+  }).join("");
 }
 
 async function choose(i) {
   const a = currentRound?.artists[i];
   if (!a || busy) return;
   busy = true;
-  document.querySelectorAll(".choose,#profileChoose").forEach(b => b.disabled = true);
+  document.querySelectorAll(".choose").forEach(b => b.disabled = true);
   message("playMessage", "Recording your call...");
 
   const { error } = await supabaseClient.rpc("record_call", {
@@ -326,7 +308,7 @@ async function choose(i) {
 
   if (error) {
     busy = false;
-    document.querySelectorAll(".choose,#profileChoose").forEach(b => b.disabled = false);
+    document.querySelectorAll(".choose").forEach(b => b.disabled = false);
     return message("playMessage", error.message, "error");
   }
 
@@ -916,9 +898,6 @@ window.submitAuth=submitAuth;
 window.signOut=signOut;
 window.nextRound=nextRound;
 window.viewCalls=viewCalls;
-window.openProfile=openProfile;
-window.closeProfile=closeProfile;
-window.chooseProfile=chooseProfile;
 window.choose=choose;
 window.sendSubmission=sendSubmission;
 window.shareEye=shareEye;
