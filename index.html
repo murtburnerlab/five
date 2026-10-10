@@ -87,7 +87,9 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <div class="form">
 <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
 <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></div>
+<div class="field hidden" id="authPasswordConfirmField"><label for="authPasswordConfirm">Confirm password</label><input id="authPasswordConfirm" type="password" autocomplete="new-password" placeholder="Repeat password"></div>
 </div>
+<button type="button" id="forgotPasswordButton" class="text-button" onclick="fiveForgotPassword()" style="margin-top:14px">FORGOT PASSWORD?</button>
 <div class="auth-actions"><button class="primary" id="authSubmit" onclick="submitAuth()">SIGN IN</button><button class="secondary" id="authModeSwitch" onclick="toggleAuthMode()">CREATE ACCOUNT</button><button class="secondary hidden" id="signOutButton" onclick="signOut()">SIGN OUT</button></div>
 </section>
 <section id="play" class="view hidden">
@@ -128,6 +130,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <footer class="site-footer"><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
 <script src="./app.js?v=20261010-play-compact-instagram1"></script>
 <script>function toggleAuthMode(){const b=document.getElementById("authModeSwitch");const toSignup=b.textContent.trim()==="CREATE ACCOUNT";setAuthMode(toSignup?"signup":"signin");b.textContent=toSignup?"BACK TO SIGN IN":"CREATE ACCOUNT";}</script>
+<script src="./five-password-recovery.js"></script>
 <script src="./five-auth-buttons.js"></script>
 <script src="./five-account-ui.js?v=20261009-ranks-fix2"></script>
 </body>
