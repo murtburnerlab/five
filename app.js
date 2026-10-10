@@ -502,13 +502,18 @@ async function renderRankings() {
   $("rankingLabel").textContent = "LOADING";
   message("rankingMessage", "Loading real rankings...");
 
-  const { data, error } = await supabaseClient.rpc("get_public_rankings");
-  if (error) {
+  const [rankingResult, instagramResult] = await Promise.all([
+    supabaseClient.rpc("get_public_rankings"),
+    supabaseClient.rpc("get_public_ranking_instagrams")
+  ]);
+  if (rankingResult.error) {
     $("rankingLabel").textContent = "ERROR";
-    return message("rankingMessage", error.message, "error");
+    return message("rankingMessage", rankingResult.error.message, "error");
   }
 
-  const rows = Array.isArray(data) ? data : [];
+  const rows = Array.isArray(rankingResult.data) ? rankingResult.data : [];
+  const instagramById = new Map((Array.isArray(instagramResult.data) ? instagramResult.data : []).map(x => [x.artist_id, x.instagram_url]));
+  window.fiveRankingRows = rows.map(r => ({...r, instagram_url: instagramById.get(r.artist_id) || ""}));
   if (!rows.length) {
     $("rankingLabel").textContent = "EMPTY";
     message("rankingMessage", "No public calls have been recorded yet.");
@@ -518,14 +523,28 @@ async function renderRankings() {
 
   message("rankingMessage", "");
   $("rankingLabel").textContent = `${rows.length} ARTIST${rows.length === 1 ? "" : "S"}`;
-  $("rankList").innerHTML = rows.map((r,i) => `
+  $("rankList").innerHTML = `
+    <div class="field" style="margin:0 0 22px">
+      <label for="rankingSearch">SEARCH ARTISTS</label>
+      <input id="rankingSearch" type="search" placeholder="Search by artist name…" oninput="filterRankings()">
+    </div>
+    <div id="rankingResults"></div>`;
+  filterRankings();
+}
+
+function filterRankings() {
+  const target = $("rankingResults");
+  if (!target) return;
+  const query = String($("rankingSearch")?.value || "").trim().toLowerCase();
+  const rows = (window.fiveRankingRows || []).filter(r => String(r.name || "").toLowerCase().includes(query));
+  target.innerHTML = rows.length ? rows.map(r => `
     <div class="rank-row">
-      <div class="rank-num">#${escapeHtml(r.rank ?? i+1)}</div>
+      <div class="rank-num">#${escapeHtml(r.rank)}</div>
       <div><div class="rank-artist">${escapeHtml(r.name)}</div>
       <div class="rank-country">${escapeHtml(r.country || "Country not listed")}</div></div>
-      <div class="rank-choice">${escapeHtml(r.choices ?? 0)}</div>
-      <div class="rank-choice">choices</div>
-    </div>`).join("");
+      <div class="rank-choice">${escapeHtml(r.choices ?? 0)} choices</div>
+      <div class="rank-choice">${r.instagram_url ? `<a href="${escapeHtml(normalizeInstagram(r.instagram_url))}" target="_blank" rel="noopener noreferrer">OPEN INSTAGRAM</a>` : '<span class="small">Instagram unavailable</span>'}</div>
+    </div>`).join("") : '<div class="small">No artists match your search.</div>';
 }
 
 function submitArtist() {
@@ -837,6 +856,7 @@ window.play=play;
 window.eye=eye;
 window.daily=daily;
 window.rankings=rankings;
+window.filterRankings=filterRankings;
 window.submitArtist=submitArtist;
 window.authView=authView;
 window.setAuthMode=setAuthMode;
