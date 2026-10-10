@@ -636,16 +636,33 @@ async function sendSubmission() {
   }
 
   setButton("submitArtistButton", true, "SENDING...");
-  const { error } = await supabaseClient.from("artist_submissions").insert({
-    submitted_by: currentSession.user.id,
-    name,
-    country,
-    instagram_url,
-    email
-  });
+  let insertResult;
+  try {
+    insertResult = await supabaseClient.from("artist_submissions").insert({
+      submitted_by: currentSession.user.id,
+      name,
+      country,
+      instagram_url,
+      email
+    });
+  } catch (requestError) {
+    setButton("submitArtistButton", false);
+    return message("submitMessage", "Could not send the application. Please try again.", "error");
+  }
   setButton("submitArtistButton", false);
 
-  if (error) return message("submitMessage", error.message, "error");
+  const { error } = insertResult;
+  if (error) {
+    const details = String(error.message || error.details || "");
+    if (/FIVE_RESUBMISSION_COOLDOWN/i.test(details)) {
+      return message(
+        "submitMessage",
+        "An application using this email or Instagram was rejected within the last 6 months. You can apply again after the 6-month period has passed.",
+        "error"
+      );
+    }
+    return message("submitMessage", details || "Could not send the application. Please try again.", "error");
+  }
 
   ["artistName", "artistCountry", "artistInstagram", "artistEmail"].forEach(id => { if ($(id)) $(id).value = "" });
   trackEvent("artist_submission");
