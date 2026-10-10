@@ -28,22 +28,6 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 .panel-label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
 .panel-value{font-size:16px;text-align:right;overflow-wrap:anywhere}
 #roundLabel{display:none!important}
-
-/* FIVE PLAY — compact artist cards */
-#grid .card{min-height:0;height:170px;padding:14px;justify-content:space-between;gap:10px;transform:none}
-#grid .card:hover{transform:none}
-#grid .number{margin-bottom:0;font-size:11px}
-#grid .card-content{min-width:0}
-#grid .name{font-size:clamp(19px,2vw,24px);line-height:1.1;overflow-wrap:anywhere}
-#grid .country{margin-top:5px;font-size:13px}
-#grid .card-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
-#grid .card-actions .profile,#grid .card-actions .choose{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;height:44px;min-width:0;padding:0 8px;font:inherit;font-size:11px;letter-spacing:.08em;text-align:center;text-decoration:none;text-transform:uppercase}
-#grid .card-actions .profile{color:#1685ff;background:transparent;border:1px solid #111}
-#grid .card-actions .profile-disabled{color:#77736c;opacity:.6}
-#grid .card-actions .choose{color:#fff;background:#111;border:1px solid #111}
-#grid .card-actions button:disabled{opacity:.5}
-@media(max-width:520px){#grid{grid-template-columns:1fr;gap:10px}#grid .card{height:155px;padding:13px}}
-
 </style>
 </head>
 <body>
@@ -117,7 +101,8 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </section>
 </main>
 <footer class="site-footer"><button onclick="submitArtist()">SUBMIT ARTIST</button><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
-<script src="./app.js?v=20261010-play-compact-instagram1"></script>
+<div id="modal" class="modal hidden" onclick="closeProfile()"><div class="modalbox" onclick="event.stopPropagation()"><div class="modaltop"><div class="eyebrow">ARTIST PROFILE</div><button class="close" onclick="closeProfile()">×</button></div><h2 id="profileName"></h2><div id="profileCountry" class="small"></div><p id="profileCopy"></p><a id="profileInstagram" href="#" target="_blank" rel="noopener" class="hidden">OPEN INSTAGRAM</a><br><button class="primary" id="profileChoose" onclick="chooseProfile()">CHOOSE THIS ARTIST</button></div></div>
+<script src="./app.js?v=20261010-ranking-pagination1"></script>
 <script>function toggleAuthMode(){const b=document.getElementById("authModeSwitch");const toSignup=b.textContent.trim()==="CREATE ACCOUNT";setAuthMode(toSignup?"signup":"signin");b.textContent=toSignup?"BACK TO SIGN IN":"CREATE ACCOUNT";}</script>
 <script src="./five-auth-buttons.js"></script>
 <script src="./five-account-ui.js?v=20261009-ranks-fix2"></script>
