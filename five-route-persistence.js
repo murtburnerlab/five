@@ -3,16 +3,22 @@
   "use strict";
   const ROUTES = new Set(["home","auth","play","result","calls","eye","daily","rankings","submit","admin"]);
   const STORAGE = "five:last-route:v3";
+  const RECOVERY_MARKER = "five:password-recovery:v1";
   let internal = false, lastRoute = null;
   const $ = id => document.getElementById(id);
   const visible = el => !!el && !el.classList.contains("hidden") && getComputedStyle(el).display !== "none";
+
   function isAuthCallback() {
     const q = new URLSearchParams(location.search);
     const hash = location.hash || "";
-    return q.get("reset-password") === "1" ||
+    let recoveryMarked = false;
+    try { recoveryMarked = sessionStorage.getItem(RECOVERY_MARKER) === "1"; } catch (_) {}
+    return recoveryMarked ||
+      q.get("reset-password") === "1" ||
       hash.includes("type=recovery") || hash.includes("access_token=") ||
       hash.includes("refresh_token=") || hash.includes("code=");
   }
+
   function current(){ for(const id of ROUTES) if(visible($(id))) return id; return null; }
   function readHash(){ const v=(location.hash||"").slice(1); return v && !/[=&/]/.test(v) && ROUTES.has(v) ? v : null; }
   function setRoute(route, replace=false){
@@ -47,7 +53,12 @@
     }catch(_){}
   }
   function restore(){
-    if(isAuthCallback()) return; // Never replace Supabase recovery tokens with an app route.
+    if(isAuthCallback()) {
+      // Never send a recovery callback to the last route. The recovery handler
+      // owns the screen until the password has been changed or the link is rejected.
+      window.dispatchEvent(new CustomEvent("five:password-recovery-callback"));
+      return;
+    }
     let route=readHash();
     if(!route){try{route=sessionStorage.getItem(STORAGE)}catch(_){}}
     if(!ROUTES.has(route))route="home";
