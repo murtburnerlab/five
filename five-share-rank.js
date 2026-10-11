@@ -52,13 +52,17 @@
     ctx.fillRect(72, 900, 700, 22);
     ctx.fillRect(930, 1850, 78, 10);
 
-    // Brand header
-    ctx.fillStyle = FG;
+    // Brand header — use a true FIVE wordmark with only V in blue.
     ctx.font = "800 64px Arial, Helvetica, sans-serif";
-    ctx.fillText("FIVE", 72, 218);
-    const fiveWidth = ctx.measureText("FI").width;
+    let logoX = 72;
+    ctx.fillStyle = FG;
+    ctx.fillText("FI", logoX, 218);
+    logoX += ctx.measureText("FI").width;
     ctx.fillStyle = BLUE;
-    ctx.fillRect(72 + fiveWidth + 1, 165, 1, 1);
+    ctx.fillText("V", logoX, 218);
+    logoX += ctx.measureText("V").width;
+    ctx.fillStyle = FG;
+    ctx.fillText("E", logoX, 218);
     ctx.font = "700 22px Arial, Helvetica, sans-serif";
     ctx.fillStyle = MUTED;
     ctx.textAlign = "right";
@@ -121,12 +125,15 @@
     ctx.fillStyle = FG;
     ctx.fillRect(72, 1610, 936, 170);
     ctx.fillStyle = "#ffffff";
-    ctx.font = "800 28px Arial, Helvetica, sans-serif";
-    ctx.fillText("DISCOVER. CHOOSE. RANK.", 108, 1670);
     ctx.font = "800 52px Arial, Helvetica, sans-serif";
-    ctx.fillText("FIVE", 108, 1740);
+    let footerLogoX = 108;
+    ctx.fillText("FI", footerLogoX, 1740);
+    footerLogoX += ctx.measureText("FI").width;
     ctx.fillStyle = BLUE;
-    ctx.fillRect(183, 1702, 17, 44);
+    ctx.fillText("V", footerLogoX, 1740);
+    footerLogoX += ctx.measureText("V").width;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("E", footerLogoX, 1740);
     ctx.fillStyle = "#b9b6af";
     ctx.font = "400 20px Arial, Helvetica, sans-serif";
     ctx.fillText("murtburnerlab.github.io/five", 72, 1840);
