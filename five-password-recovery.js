@@ -1,196 +1,219 @@
-/* FIVE — email signup confirmation and password recovery */
+/* FIVE — passwordless email authentication
+ * Replace the existing five-password-recovery.js with this file.
+ * Google OAuth remains handled by five-auth-buttons.js and is not modified.
+ */
 (() => {
+  "use strict";
+
   const $ = id => document.getElementById(id);
-  let resetMode = false;
-  let authEventHandlerAttached = false;
-  const originalSetAuthMode = window.setAuthMode;
-  const originalSubmitAuth = window.submitAuth;
-  const originalUpdateAuthUI = window.updateAuthUI;
-  if (typeof originalUpdateAuthUI === "function") {
-    window.updateAuthUI = function() {
-      const result = originalUpdateAuthUI();
-      if (resetMode) {
-        if ($("authPassword")) $("authPassword").disabled = false;
-        if ($("authPasswordConfirm")) $("authPasswordConfirm").disabled = false;
-        if ($("authSubmit")) $("authSubmit").disabled = false;
-      }
-      return result;
-    };
-  }
+  let sending = false;
+  let magicLinkClient = null;
 
-  function setConfirmVisible(visible) {
-    const field = $("authPasswordConfirmField");
-    if (field) field.classList.toggle("hidden", !visible);
-    const input = $("authPasswordConfirm");
-    if (input) {
-      input.required = !!visible;
-      if (!visible) input.value = "";
+  const style = document.createElement("style");
+  style.id = "five-passwordless-auth-styles";
+  style.textContent = `
+    /* Keep legacy password controls in the DOM for compatibility with app.js,
+       but remove them completely from the visible authentication interface. */
+    #authPassword,
+    #authPasswordConfirm,
+    #authPasswordConfirmField,
+    #forgotPasswordButton {
+      display: none !important;
     }
-  }
-
-  function showForgotPassword(visible) {
-    const button = $("forgotPasswordButton");
-    if (button) button.classList.toggle("hidden", !visible);
-  }
-
-  function enterResetMode() {
-    resetMode = true;
-    if (typeof originalSetAuthMode === "function") originalSetAuthMode("signin");
-    $("authTitle").textContent = "RESET PASSWORD";
-    $("authCopy").textContent = "Choose a new password for your FIVE account.";
-    $("authPassword").disabled = false;
-    $("authPassword").autocomplete = "new-password";
-    $("authPassword").value = "";
-    $("authPassword").placeholder = "New password";
-    setConfirmVisible(true);
-    showForgotPassword(false);
-    $("authModeSwitch")?.classList.add("hidden");
-    $("authSubmit").textContent = "UPDATE PASSWORD";
-    $("authSubmit").disabled = false;
-    $("signOutButton")?.classList.add("hidden");
-    $("auth").classList.remove("hidden");
-    document.querySelectorAll("main > .view").forEach(v => {
-      if (v.id !== "auth") v.classList.add("hidden");
-    });
-    history.replaceState(null, "", location.pathname + location.search);
-  }
-
-  if (typeof window.setAuthMode === "function") {
-    window.setAuthMode = function(mode) {
-      if (resetMode) resetMode = false;
-      const result = originalSetAuthMode(mode);
-      setConfirmVisible(mode === "signup");
-      showForgotPassword(mode !== "signup");
-      $("authPassword").autocomplete = mode === "signup" ? "new-password" : "current-password";
-      $("authPassword").placeholder = "Password";
-      $("authModeSwitch")?.classList.remove("hidden");
-      return result;
-    };
-  }
-
-  if (typeof originalSubmitAuth === "function") {
-    window.submitAuth = async function() {
-      if (resetMode) {
-        const password = $("authPassword").value;
-        const confirm = $("authPasswordConfirm").value;
-        if (password.length < 6) {
-          const el = $("authMessage");
-          el.textContent = "Use a password with at least 6 characters.";
-          el.className = "message error";
-          return;
-        }
-        if (password !== confirm) {
-          const el = $("authMessage");
-          el.textContent = "Passwords do not match. Please check both fields.";
-          el.className = "message error";
-          return;
-        }
-        $("authSubmit").disabled = true;
-        $("authSubmit").textContent = "UPDATING...";
-        const { error } = await window.supabase.createClient(
-          window.FIVE_SUPABASE_URL,
-          window.FIVE_SUPABASE_KEY,
-          { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
-        ).auth.updateUser({ password });
-        $("authSubmit").disabled = false;
-        $("authSubmit").textContent = "UPDATE PASSWORD";
-        if (error) {
-          const el = $("authMessage");
-          el.textContent = error.message || "Could not update password. Request a new reset email and try again.";
-          el.className = "message error";
-          return;
-        }
-        resetMode = false;
-        $("authPassword").value = "";
-        $("authPasswordConfirm").value = "";
-        setConfirmVisible(false);
-        $("authTitle").textContent = "PASSWORD UPDATED";
-        $("authCopy").textContent = "Your password has been changed. Sign in with your new password.";
-        $("authSubmit").textContent = "SIGN IN";
-        $("authModeSwitch")?.classList.remove("hidden");
-        $("authModeSwitch").textContent = "CREATE ACCOUNT";
-        showForgotPassword(true);
-        const el = $("authMessage");
-        el.textContent = "Password updated successfully. You can now sign in with your new password.";
-        el.className = "message success";
-        return;
-      }
-
-      if ($("authTitle")?.textContent === "CREATE ACCOUNT") {
-        const password = $("authPassword").value;
-        const confirm = $("authPasswordConfirm")?.value || "";
-        if (password.length < 6) {
-          const el = $("authMessage");
-          el.textContent = "Use a password with at least 6 characters.";
-          el.className = "message error";
-          return;
-        }
-        if (password !== confirm) {
-          const el = $("authMessage");
-          el.textContent = "Passwords do not match. Please check both fields.";
-          el.className = "message error";
-          return;
-        }
-      }
-      return originalSubmitAuth();
-    };
-  }
-
-  window.fiveForgotPassword = async function() {
-    const email = $("authEmail").value.trim();
-    if (!email) {
-      const el = $("authMessage");
-      el.textContent = "Enter your email address first. We will send a password reset link to that address.";
-      el.className = "message error";
-      $("authEmail").focus();
-      return;
+    #auth .form .field:has(#authPassword) {
+      display: none !important;
     }
-    const button = $("forgotPasswordButton");
-    const originalText = button.textContent;
-    button.disabled = true;
-    button.textContent = "SENDING...";
-    const client = window.supabase.createClient(
+    #auth .form .field:has(#authPasswordConfirm) {
+      display: none !important;
+    }
+    #auth .auth-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    #auth #authSubmit {
+      width: 100%;
+      min-height: 54px;
+    }
+    #auth #authModeSwitch {
+      width: 100%;
+      min-height: 50px;
+    }
+    #auth .auth-actions #signOutButton {
+      width: 100%;
+    }
+  `;
+  document.head.appendChild(style);
+
+  function client() {
+    if (magicLinkClient) return magicLinkClient;
+    if (!window.supabase?.createClient || !window.FIVE_SUPABASE_URL || !window.FIVE_SUPABASE_KEY) {
+      throw new Error("Authentication is temporarily unavailable. Please try again later.");
+    }
+    magicLinkClient = window.supabase.createClient(
       window.FIVE_SUPABASE_URL,
       window.FIVE_SUPABASE_KEY,
-      { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      }
     );
-    const redirectTo = location.origin + location.pathname + "?reset-password=1";
-    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
-    button.disabled = false;
-    button.textContent = originalText;
+    return magicLinkClient;
+  }
+
+  function setMessage(text, type = "") {
     const el = $("authMessage");
-    if (error) {
-      el.textContent = error.message || "Could not send the reset email. Please try again.";
-      el.className = "message error";
-    } else {
-      el.textContent = "If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.";
-      el.className = "message success";
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "message" + (type ? " " + type : "");
+    el.classList.toggle("hidden", !text);
+  }
+
+  function setBusy(busy, mode) {
+    const button = $("authSubmit");
+    if (!button) return;
+    button.disabled = busy;
+    button.textContent = busy
+      ? (mode === "signup" ? "SENDING LINK..." : "SENDING LINK...")
+      : (mode === "signup" ? "CREATE ACCOUNT" : "SIGN IN");
+  }
+
+  function currentMode() {
+    return $("authTitle")?.textContent?.trim().toUpperCase() === "CREATE ACCOUNT"
+      ? "signup"
+      : "signin";
+  }
+
+  function normalizeMode(mode) {
+    return mode === "signup" ? "signup" : "signin";
+  }
+
+  const originalSetAuthMode = window.setAuthMode;
+  if (typeof originalSetAuthMode === "function") {
+    window.setAuthMode = function(mode) {
+      const normalized = normalizeMode(mode);
+      const result = originalSetAuthMode(normalized);
+      const title = $("authTitle");
+      const copy = $("authCopy");
+      const submit = $("authSubmit");
+      if (title) title.textContent = normalized === "signup" ? "CREATE ACCOUNT" : "SIGN IN";
+      if (copy) {
+        copy.textContent = normalized === "signup"
+          ? "Enter your email and we’ll send you a secure sign-in link."
+          : "Enter the email address associated with your FIVE account. We’ll email you a secure sign-in link.";
+      }
+      if (submit) {
+        submit.textContent = normalized === "signup" ? "CREATE ACCOUNT" : "SIGN IN";
+        submit.disabled = false;
+      }
+      setMessage("");
+      return result;
+    };
+  }
+
+  window.submitAuth = async function() {
+    if (sending) return;
+
+    const emailInput = $("authEmail");
+    const email = (emailInput?.value || "").trim();
+    const mode = currentMode();
+
+    if (!email) {
+      setMessage("Enter your email address.", "error");
+      emailInput?.focus();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setMessage("Enter a valid email address.", "error");
+      emailInput?.focus();
+      return;
+    }
+
+    sending = true;
+    setBusy(true, mode);
+    setMessage("");
+
+    try {
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error } = await client().auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: mode === "signup",
+          emailRedirectTo: redirectTo
+        }
+      });
+
+      if (error) {
+        const raw = String(error.message || "");
+        if (mode === "signin" && /signups not allowed|user not found|unable to validate email/i.test(raw)) {
+          throw new Error("No FIVE account was found for this email. Choose CREATE ACCOUNT to register.");
+        }
+        throw error;
+      }
+
+      try {
+        if (typeof window.trackEvent === "function") {
+          window.trackEvent(mode === "signup" ? "account_signup_link_requested" : "account_login_link_requested");
+        }
+      } catch (_) {}
+
+      setMessage(
+        mode === "signup"
+          ? "Check your inbox. Open the email from FIVE to confirm your address and activate your account. If it doesn’t arrive, check your spam folder."
+          : "Check your inbox for your secure FIVE sign-in link. If it doesn’t arrive, check your spam folder.",
+        "success"
+      );
+    } catch (error) {
+      setMessage(error?.message || "Could not send the email link. Please try again.", "error");
+    } finally {
+      sending = false;
+      setBusy(false, mode);
     }
   };
 
-  function watchRecoveryEvent() {
-    if (authEventHandlerAttached || !window.supabase?.createClient) return;
-    authEventHandlerAttached = true;
-    const client = window.supabase.createClient(
-      window.FIVE_SUPABASE_URL,
-      window.FIVE_SUPABASE_KEY,
-      { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
-    );
-    client.auth.onAuthStateChange(event => {
-      if (event === "PASSWORD_RECOVERY") enterResetMode();
-    });
-    if (new URLSearchParams(location.search).get("reset-password") === "1" &&
-        location.hash.includes("type=recovery")) {
-      enterResetMode();
+  // Keep the current page's existing mode switch and Google button.
+  // Remove the obsolete password-recovery entry point and confirmation behavior.
+  document.addEventListener("DOMContentLoaded", () => {
+    $("forgotPasswordButton")?.remove();
+    // Keep legacy password nodes in the DOM because app.js references them,
+    // but hide them with CSS so the old mode switch remains compatible.
+
+    const email = $("authEmail");
+    if (email) {
+      email.type = "email";
+      email.autocomplete = "email";
+      email.required = true;
+      email.placeholder = "you@example.com";
     }
+
+    if (typeof window.setAuthMode === "function") {
+      window.setAuthMode("signin");
+    } else {
+      const title = $("authTitle");
+      const copy = $("authCopy");
+      if (title) title.textContent = "SIGN IN";
+      if (copy) copy.textContent = "Enter the email address associated with your FIVE account. We’ll email you a secure sign-in link.";
+    }
+  });
+
+  // The scripts are loaded at the end of body, after the auth markup exists.
+  $("forgotPasswordButton")?.remove();
+  // Do not remove legacy password nodes: app.js still references them.
+  // They are hidden by the stylesheet injected above.
+
+  const email = $("authEmail");
+  if (email) {
+    email.type = "email";
+    email.autocomplete = "email";
+    email.required = true;
+    email.placeholder = "you@example.com";
   }
 
-  // app.js initializes Supabase before this script is loaded.
-  watchRecoveryEvent();
-  if (new URLSearchParams(location.search).get("reset-password") === "1" &&
-      location.hash.includes("type=recovery")) {
-    enterResetMode();
-  }
-  setConfirmVisible(false);
-  showForgotPassword(true);
+  // Set the initial copy without changing the existing Google OAuth implementation.
+  const copy = $("authCopy");
+  if (copy) copy.textContent = "Enter the email address associated with your FIVE account. We’ll email you a secure sign-in link.";
 })();
