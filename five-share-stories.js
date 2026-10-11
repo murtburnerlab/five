@@ -331,12 +331,12 @@
     if (first) {
       const name = first.querySelector("strong")?.textContent?.trim() || "Artist";
       const countText = first.querySelector("span")?.textContent || "0";
-      const count = Math.max(0, Number(countText.replace(/[^\\d]/g, "")) || 0);
+      const count = Math.max(0, Number(countText.replace(/[^\d]/g, "")) || 0);
       if (count > 0) return { name, count };
     }
     const bestName = document.getElementById("bestCall")?.textContent?.trim();
     const bestCopy = document.getElementById("bestCallCopy")?.textContent || "";
-    const match = bestCopy.match(/(\\d+) recorded call/);
+    const match = bestCopy.match(/(\d+) recorded call/);
     if (bestName && bestName !== "—" && match) {
       return { name: bestName, count: Number(match[1]) || 0 };
     }
