@@ -5,9 +5,21 @@
   let resetMode = false;
   let authEventHandlerAttached = false;
   let recoveryClient = null;
+  let recoveryPending = new URLSearchParams(location.search).get("reset-password") === "1";
+  let originalHome = null;
   const originalSetAuthMode = window.setAuthMode;
   const originalSubmitAuth = window.submitAuth;
   const originalUpdateAuthUI = window.updateAuthUI;
+  originalHome = window.home;
+  if (typeof originalHome === "function") {
+    window.home = function(...args) {
+      if (recoveryPending) {
+        enterResetMode();
+        return;
+      }
+      return originalHome.apply(this, args);
+    };
+  }
 
   function client() {
     if (!window.FIVE_SUPABASE_URL || !window.FIVE_SUPABASE_KEY || !window.supabase?.createClient) {
@@ -91,6 +103,7 @@
   }
 
   function enterResetMode() {
+    recoveryPending = true;
     resetMode = true;
     if (typeof originalSetAuthMode === "function") originalSetAuthMode("signin");
     $("authTitle").textContent = "RESET PASSWORD";
@@ -168,6 +181,7 @@
           const { error } = await client().auth.updateUser({ password });
           if (error) throw error;
           resetMode = false;
+          recoveryPending = false;
           $("authPassword").value = "";
           $("authPasswordConfirm").value = "";
           setConfirmVisible(false);
@@ -265,23 +279,58 @@
   function watchRecoveryEvent() {
     if (authEventHandlerAttached || !window.supabase?.createClient) return;
     authEventHandlerAttached = true;
+    const hasRecoveryMarker = () =>
+      new URLSearchParams(location.search).get("reset-password") === "1" ||
+      location.hash.includes("type=recovery");
+
     try {
-      client().auth.onAuthStateChange(event => {
-        if (event === "PASSWORD_RECOVERY") enterResetMode();
+      const auth = client().auth;
+      auth.onAuthStateChange(event => {
+        if (event === "PASSWORD_RECOVERY") {
+          recoveryPending = true;
+          // app.js also restores the home view during initialization. Re-apply
+          // the recovery form after that initialization has had time to finish.
+          setTimeout(enterResetMode, 700);
+        }
       });
+
+      if (hasRecoveryMarker()) {
+        recoveryPending = true;
+        // Supabase may exchange a ?code=... PKCE callback asynchronously, and
+        // app.js may consume the URL before this client reads the session.
+        auth.getSession().then(({ data, error }) => {
+          if (error) console.warn("FIVE recovery session check failed:", error.message);
+          if (data?.session) {
+            setTimeout(enterResetMode, 700);
+          } else {
+            // Give the primary app client time to finish exchanging the link.
+            setTimeout(async () => {
+              try {
+                const result = await auth.getSession();
+                if (result.data?.session) enterResetMode();
+                else {
+                  recoveryPending = false;
+                  const msg = $("authMessage");
+                  if (msg) {
+                    msg.textContent = "This reset link may have expired or already been used. Request a new password reset email.";
+                    msg.className = "message error";
+                  }
+                }
+              } catch (_) { recoveryPending = false; }
+            }, 1200);
+          }
+        }).catch(error => {
+          recoveryPending = false;
+          console.warn("FIVE recovery session check failed:", error);
+        });
+      }
     } catch (error) {
       console.error("FIVE password recovery initialization failed:", error);
-    }
-    if (new URLSearchParams(location.search).get("reset-password") === "1" && location.hash.includes("type=recovery")) {
-      enterResetMode();
     }
   }
 
   addModal();
   watchRecoveryEvent();
-  if (new URLSearchParams(location.search).get("reset-password") === "1" && location.hash.includes("type=recovery")) {
-    enterResetMode();
-  }
   setConfirmVisible(false);
   showForgotPassword(true);
 })();
