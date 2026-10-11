@@ -1,5 +1,4 @@
-/* FIVE — preserve auth callback intent before any Supabase client can consume the URL.
-   Also ensure signup confirmations return to the GitHub Pages app path. */
+/* FIVE — preserve password recovery intent before Supabase consumes callback URL. */
 (() => {
   "use strict";
   const RECOVERY_MARKER = "five:password-recovery:v1";
@@ -12,13 +11,16 @@
       h.get("type") === "recovery" ||
       h.has("access_token") ||
       h.has("refresh_token");
+    // The reset flag itself is enough to preserve intent. Supabase may already
+    // have consumed or removed the callback parameters when later scripts run.
+    if (q.get("reset-password") === "1" || h.get("type") === "recovery") {
+      try { sessionStorage.setItem(RECOVERY_MARKER, "1"); } catch (_) {}
+    }
     if (q.get("reset-password") === "1" && hasRecoverySignal) {
       try { sessionStorage.setItem(RECOVERY_MARKER, "1"); } catch (_) {}
     }
   }
 
-  // This script loads before app.js, so record the callback before supabase-js
-  // can exchange the PKCE code and clean the URL.
   markRecoveryFromUrl();
 
   if (!window.supabase || typeof window.supabase.createClient !== "function") return;
@@ -27,20 +29,16 @@
 
   window.supabase.createClient = function (...args) {
     const client = originalCreateClient(...args);
-    if (client?.auth && typeof client.auth.signUp === "function") {
-      const originalSignUp = client.auth.signUp.bind(client.auth);
-      client.auth.signUp = function (credentials = {}, options) {
-        const suppliedOptions = credentials.options || {};
-        return originalSignUp({
-          ...credentials,
-          options: {
-            ...suppliedOptions,
-            ...(options || {}),
-            emailRedirectTo: suppliedOptions.emailRedirectTo || options?.emailRedirectTo || appRedirectUrl
-          }
-        });
-      };
-    }
+    try {
+      const authOptions = args[2] || {};
+      const existing = authOptions.auth || {};
+      // Keep the existing app auth settings and preserve callback detection.
+      client.auth.onAuthStateChange((event) => {
+        if (event === "PASSWORD_RECOVERY") {
+          try { sessionStorage.setItem(RECOVERY_MARKER, "1"); } catch (_) {}
+        }
+      });
+    } catch (_) {}
     return client;
   };
 })();
