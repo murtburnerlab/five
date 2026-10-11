@@ -81,15 +81,12 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </section>
 <section id="auth" class="view auth hidden">
 <div class="eyebrow">ACCOUNT</div><div class="section-title" id="authTitle">SIGN IN</div>
-<p class="submit-note" id="authCopy">Sign in to make calls, submit artists, and build your record.</p>
+<p class="submit-note" id="authCopy">Enter the email address associated with your FIVE account. We’ll email you a secure sign-in link.</p>
 <div id="authMessage" class="message hidden"></div>
 <div class="form">
-<div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
-<div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"></div>
-<div class="field hidden" id="authPasswordConfirmField"><label for="authPasswordConfirm">Confirm password</label><input id="authPasswordConfirm" type="password" autocomplete="new-password" placeholder="Repeat password"></div>
+<div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required></div>
 </div>
-<button type="button" id="forgotPasswordButton" class="text-button" onclick="fiveForgotPassword()" style="margin-top:14px">FORGOT PASSWORD?</button>
-<div class="auth-actions"><button class="primary" id="authSubmit" onclick="submitAuth()">SIGN IN</button><button class="secondary" id="authModeSwitch" onclick="toggleAuthMode()">CREATE ACCOUNT</button><button class="secondary hidden" id="signOutButton" onclick="signOut()">SIGN OUT</button></div>
+<div class="auth-actions"><button class="primary" id="authSubmit" type="button" onclick="submitAuth()">SIGN IN</button><button class="secondary" id="authModeSwitch" type="button" onclick="toggleAuthMode()">CREATE ACCOUNT</button><button class="secondary hidden" id="signOutButton" type="button" onclick="signOut()">SIGN OUT</button></div>
 </section>
 <section id="play" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">DISCOVER</div><div class="section-title">MAKE YOUR CALL</div></div><div class="round" id="roundLabel">ROUND 01</div></div>
@@ -127,10 +124,10 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </section>
 </main>
 <footer class="site-footer"><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
-<script src="./app.js?v=five-restore-view-20261011-1"></script>
-<script>function toggleAuthMode(){const b=document.getElementById("authModeSwitch");const toSignup=b.textContent.trim()==="CREATE ACCOUNT";setAuthMode(toSignup?"signup":"signin");b.textContent=toSignup?"BACK TO SIGN IN":"CREATE ACCOUNT";}</script>
-<script src="./five-password-recovery.js"></script>
-<script src="./five-auth-buttons.js"></script>
+<script src="./app.js?v=five-passwordless-20261011-2"></script>
+<script>function toggleAuthMode(){const b=document.getElementById("authModeSwitch");const toSignup=b.textContent.trim()==="CREATE ACCOUNT";setAuthMode(toSignup?"signup":"signin");}</script>
+<script src="./five-password-recovery.js?v=five-passwordless-20261011-2"></script>
+<script src="./five-auth-buttons.js?v=20261011-google-keep"></script>
 <script src="./five-account-ui.js?v=20261009-ranks-fix2"></script>
 <script src="./five-route-persistence.js?v=20261011-route-fix3"></script>
 </body>
