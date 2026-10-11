@@ -56,7 +56,7 @@
     ctx.font = "800 64px Arial, Helvetica, sans-serif";
     let logoX = 72;
     for (const glyph of ["F", "I", "V", "E"]) {
-      ctx.fillStyle = glyph === "V" ? BLUE : FG;
+      ctx.fillStyle = (glyph === "I" || glyph === "V") ? BLUE : FG;
       ctx.fillText(glyph, logoX, 218);
       logoX += ctx.measureText(glyph).width;
     }
@@ -125,7 +125,7 @@
     ctx.font = "800 52px Arial, Helvetica, sans-serif";
     let footerLogoX = 108;
     for (const glyph of ["F", "I", "V", "E"]) {
-      ctx.fillStyle = glyph === "V" ? BLUE : "#ffffff";
+      ctx.fillStyle = (glyph === "I" || glyph === "V") ? BLUE : "#ffffff";
       ctx.fillText(glyph, footerLogoX, 1740);
       footerLogoX += ctx.measureText(glyph).width;
     }

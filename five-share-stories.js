@@ -11,14 +11,14 @@
   const safe = (v, fallback="") => String(v ?? fallback).trim();
   const upper = v => safe(v).toLocaleUpperCase("en-US");
 
-  function wordmark(ctx, x, y, size, foreground) {
-    ctx.font = `900 ${size}px Arial, Helvetica, sans-serif`;
-    ctx.textBaseline = "alphabetic";
-    let cursor = x;
-    for (const glyph of ["F","I","V","E"]) {
-      ctx.fillStyle = glyph === "V" ? C.blue : foreground;
-      ctx.fillText(glyph, cursor, y);
-      cursor += ctx.measureText(glyph).width;
+  function wordmark(ctx,x,y,size,foreground){
+    ctx.font=`900 ${size}px Arial, Helvetica, sans-serif`;
+    ctx.textBaseline="alphabetic";
+    let cursor=x;
+    for(const glyph of ["F","I","V","E"]){
+      ctx.fillStyle=(glyph==="I"||glyph==="V")?C.blue:foreground;
+      ctx.fillText(glyph,cursor,y);
+      cursor+=ctx.measureText(glyph).width;
     }
   }
   function wrap(ctx, text, maxWidth, maxLines=3) {
