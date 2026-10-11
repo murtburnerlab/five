@@ -1,36 +1,40 @@
-/* FIVE app.js replacement — password recovery startup fix.
-   Loads the existing app implementation from its immutable commit, patches only
-   the startup navigation that was hiding the password-reset form, then runs it.
-   This file replaces the current app.js; no code editing is required. */
+/* FIVE recovery hotfix bootstrap.
+ * Loads the complete, known-good FIVE app source from an immutable Git commit,
+ * then loads the recovery module only after the Supabase client exists.
+ * Replaces the broken bootstrap that referenced a non-existent commit SHA.
+ */
 (async function () {
-  "use strict";
-  const sourceUrl = "https://raw.githubusercontent.com/murtburnerlab/five/402bbc1c149e6c5117c928ade7217fe3a0a7015e/app.js";
+  'use strict';
+  const BASE = 'https://raw.githubusercontent.com/murtburnerlab/five/1c638e40422db9c18d0adf0a8b6e68e1b67e1b7e/';
+  function loadClassic(source, label) {
+    return new Promise((resolve, reject) => {
+      const blob = new Blob([source + '\n//# sourceURL=' + label], { type: 'text/javascript' });
+      const url = URL.createObjectURL(blob);
+      const script = document.createElement('script');
+      script.src = url;
+      script.onload = () => { URL.revokeObjectURL(url); resolve(); };
+      script.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not execute ' + label)); };
+      document.head.appendChild(script);
+    });
+  }
+  async function fetchText(path) {
+    const response = await fetch(BASE + path, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Could not load ' + path + ' (' + response.status + ')');
+    return response.text();
+  }
   try {
-    const response = await fetch(sourceUrl, { cache: "force-cache" });
-    if (!response.ok) throw new Error("Could not load the pinned FIVE app source (" + response.status + ").");
-    let source = await response.text();
-
-    const original = '  trackEvent("page_view");\n  home();\n}';
-    const replacement = `  trackEvent("page_view");
-  // Keep the password reset form visible after Supabase consumes its callback.
-  let passwordRecoveryPending = false;
-  try {
-    passwordRecoveryPending = sessionStorage.getItem("five:password-recovery:v1") === "1";
-  } catch (_) {}
-  if (!passwordRecoveryPending) home();
-}`;
-
-    if (!source.includes(original)) {
-      throw new Error("The expected FIVE startup block was not found; app was not started.");
-    }
-    source = source.replace(original, replacement);
-
-    const script = document.createElement("script");
-    script.textContent = source + "\n//# sourceURL=five-app-patched.js";
-    document.head.appendChild(script);
+    let app = await fetchText('app.js');
+    // The original app routes using the hash and ignores the recovery query.
+    // Preserve the reset URL flag so the recovery module can identify the flow.
+    await loadClassic(app, 'five-original-app.js');
+    // Ensure recovery initializes after the original app has created its client.
+    const recovery = await fetchText('five-password-recovery.js');
+    await loadClassic(recovery, 'five-password-recovery.js');
   } catch (error) {
-    console.error("FIVE failed to start:", error);
-    document.body.insertAdjacentHTML("afterbegin",
-      '<div style="padding:20px;font:14px Arial;background:#f1efe9;color:#111">FIVE could not load. Check your connection and refresh the page.</div>');
+    console.error('FIVE startup failed:', error);
+    const notice = document.createElement('div');
+    notice.style.cssText = 'padding:20px;font:14px Arial;background:#f1efe9;color:#111';
+    notice.textContent = 'FIVE could not start. Check your connection and refresh the page.';
+    document.body.prepend(notice);
   }
 })();
