@@ -77,6 +77,15 @@
       window.dispatchEvent(new CustomEvent("five:password-recovery-callback"));
       return;
     }
+    // The callback URL may already have been cleaned by Supabase. If the
+    // pre-client redirect script preserved the marker, let the recovery flow
+    // finish instead of restoring the last route and clearing that marker.
+    try {
+      if (sessionStorage.getItem(MARKER) === "1") {
+        window.dispatchEvent(new CustomEvent("five:password-recovery-callback"));
+        return;
+      }
+    } catch (_) {}
     releaseRecoveryLock();
     let route = readHash();
     if (!route) { try { route = sessionStorage.getItem(STORAGE); } catch (_) {} }

@@ -270,7 +270,10 @@
   }
 
   function activate(supabase) {
-    if (!urlHasRecoverySignal()) return;
+    // five-auth-redirect.js runs before app.js and records the callback marker.
+    // Supabase can exchange the PKCE code and clean the URL before this script
+    // loads, so the URL alone is not a reliable recovery signal.
+    if (!isRecoveryActive()) return;
     rememberRecovery();
     showResetScreen();
     // Give Supabase's URL callback exchange a chance to complete. The listener
@@ -315,8 +318,14 @@
 
   installRecoveryRequestUI();
   installAuthListener();
+  // If the early redirect script captured a recovery callback, activate even
+  // if Supabase already removed the callback parameters from the URL.
+  if (isRecoveryActive()) {
+    const supabase = client();
+    if (supabase) activate(supabase);
+  }
   confirmField(false);
-  forgotLink(true);
+  forgotLink(!resetMode);
 
   // If the app's async init() calls home() after the recovery callback, restore
   // the reset form while recovery is active. Explicit navigation emits a leave
