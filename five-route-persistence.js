@@ -1,10 +1,16 @@
 /* FIVE — preserve the active view across refresh and browser navigation. */
 (() => {
   "use strict";
+  const $ = id => document.getElementById(id);
+  // Recovery links carry Supabase credentials in the URL hash. Never replace that
+  // hash with an app route or restore an old route while password recovery is active.
+  if (new URLSearchParams(location.search).get("reset-password") === "1") {
+    window.FIVE_PASSWORD_RECOVERY_ACTIVE = true;
+    return;
+  }
   const ROUTES = new Set(["home","auth","play","result","calls","eye","daily","rankings","submit","admin"]);
   const STORAGE = "five:last-route:v3";
   let internal = false, lastRoute = null;
-  const $ = id => document.getElementById(id);
   const visible = el => !!el && !el.classList.contains("hidden") && getComputedStyle(el).display !== "none";
   function current(){ for(const id of ROUTES) if(visible($(id))) return id; return null; }
   function readHash(){ const v=(location.hash||"").slice(1); return v && !/[=&/]/.test(v) && ROUTES.has(v) ? v : null; }
