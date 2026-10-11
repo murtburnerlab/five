@@ -123,7 +123,126 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <div style="margin-top:22px"><button class="primary" id="submitArtistButton" onclick="sendSubmission()">SEND REQUEST</button></div>
 </section>
 </main>
-<footer class="site-footer"><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
+
+<style>
+/* THE IDEA — integrated FIVE information overlay */
+.idea-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg);color:var(--fg);overflow-y:auto;overscroll-behavior:contain}
+.idea-overlay[hidden]{display:none!important}
+.idea-shell{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:0 0 54px}
+.idea-topbar{height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line)}
+.idea-wordmark{font-size:30px;font-weight:800;letter-spacing:-.08em}
+.idea-close{border:1px solid var(--fg);background:transparent;color:var(--fg);padding:11px 14px;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.idea-close:hover{background:var(--fg);color:var(--bg)}
+.idea-hero{padding:clamp(60px,10vw,130px) 0 76px;border-bottom:1px solid var(--fg)}
+.idea-kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.idea-hero h1{max-width:900px;font-size:clamp(54px,10.5vw,132px);line-height:.82;letter-spacing:-.095em;margin:24px 0 34px;font-weight:800}
+.idea-lead{max-width:650px;font-size:clamp(19px,2.5vw,29px);line-height:1.2;letter-spacing:-.035em;margin:0}
+.idea-intro{display:grid;grid-template-columns:1fr 1fr;gap:60px;padding:42px 0 76px;border-bottom:1px solid var(--line)}
+.idea-intro p{font-size:15px;line-height:1.55;margin:0;max-width:480px}
+.idea-section{padding:70px 0;border-bottom:1px solid var(--line)}
+.idea-section-head{display:grid;grid-template-columns:.7fr 1.3fr;gap:35px;align-items:start;margin-bottom:35px}
+.idea-section h2{font-size:clamp(38px,6vw,72px);line-height:.88;letter-spacing:-.075em;margin:0;font-weight:800}
+.idea-steps{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--fg);gap:0}
+.idea-step{padding:20px 18px 0 0;margin-right:18px;min-height:160px}
+.idea-step-num{font-size:10px;color:var(--muted);letter-spacing:.12em}
+.idea-step h3{font-size:21px;letter-spacing:-.045em;margin:25px 0 10px}
+.idea-step p{font-size:12px;line-height:1.5;color:var(--muted);margin:0;max-width:220px}
+.idea-principle{background:#111;color:#f7f6f2;padding:clamp(28px,5vw,64px);display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:end;margin-top:42px}
+.idea-principle .idea-kicker{color:#aaa69f}
+.idea-principle h3{font-size:clamp(36px,6vw,70px);line-height:.88;letter-spacing:-.075em;margin:18px 0 0}
+.idea-principle p{font-size:14px;line-height:1.55;color:#d1cec8;margin:0;max-width:420px}
+.idea-closeout{padding:75px 0 25px;display:flex;justify-content:space-between;align-items:end;gap:30px}
+.idea-closeout h2{font-size:clamp(42px,7vw,86px);line-height:.86;letter-spacing:-.085em;margin:15px 0 0}
+.idea-closeout p{font-size:12px;line-height:1.5;color:var(--muted);max-width:250px;margin:0 0 5px}
+.idea-return{border:0;background:#111;color:#fff;padding:17px 22px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-top:26px}
+.idea-return:hover{background:#333}
+@media(max-width:700px){
+ .idea-shell{width:calc(100% - 30px)}
+ .idea-topbar{height:68px}
+ .idea-intro,.idea-section-head,.idea-principle{grid-template-columns:1fr;gap:22px}
+ .idea-intro{padding:30px 0 50px}
+ .idea-section{padding:50px 0}
+ .idea-steps{grid-template-columns:1fr 1fr}
+ .idea-step{min-height:145px;padding-top:17px}
+ .idea-principle{padding:27px}
+ .idea-closeout{padding-top:50px;display:block}
+ .idea-closeout p{margin-top:25px}
+}
+@media(prefers-reduced-motion:reduce){.idea-overlay{scroll-behavior:auto}}
+</style>
+<section id="ideaOverlay" class="idea-overlay" role="dialog" aria-modal="true" aria-labelledby="ideaTitle" hidden>
+  <div class="idea-shell">
+    <div class="idea-topbar">
+      <div class="idea-wordmark" aria-label="FIVE">F<span style="color:#111">I</span><span style="color:#1685ff">V</span>E</div>
+      <button type="button" class="idea-close" onclick="closeIdea()">CLOSE&nbsp; ×</button>
+    </div>
+    <section class="idea-hero">
+      <div class="idea-kicker">THE IDEA · FIVE</div>
+      <h1 id="ideaTitle">ART DESERVES<br>TO BE DISCOVERED.</h1>
+      <p class="idea-lead">A new way to discover contemporary artists — and make your own voice part of the picture.</p>
+    </section>
+    <section class="idea-intro">
+      <div class="idea-kicker">WHY FIVE EXISTS</div>
+      <p>Great artists are everywhere. Finding them shouldn't depend on knowing the right people. FIVE gives people a simple way to discover artists, look at their work, and express what resonates with them.</p>
+    </section>
+    <section class="idea-section">
+      <div class="idea-section-head">
+        <div class="idea-kicker">01 / HOW IT WORKS</div>
+        <h2>FIVE ARTISTS.<br>YOUR CALL.</h2>
+      </div>
+      <div class="idea-steps">
+        <article class="idea-step"><div class="idea-step-num">01</div><h3>Meet five artists.</h3><p>Each round introduces you to a small group of artists from the public database.</p></article>
+        <article class="idea-step"><div class="idea-step-num">02</div><h3>Look closer.</h3><p>Explore the artists and their work. Take a moment before making your choice.</p></article>
+        <article class="idea-step"><div class="idea-step-num">03</div><h3>Make your call.</h3><p>Choose the artist that speaks to you. Your choice becomes part of the live data.</p></article>
+        <article class="idea-step"><div class="idea-step-num">04</div><h3>Keep discovering.</h3><p>Return for new rounds and see how collective choices shape the ranking over time.</p></article>
+      </div>
+    </section>
+    <section class="idea-section">
+      <div class="idea-section-head">
+        <div class="idea-kicker">02 / MORE THAN A RANKING</div>
+        <h2>DISCOVERY IS<br>THE POINT.</h2>
+      </div>
+      <p style="font-size:15px;line-height:1.6;max-width:650px;margin:0">A ranking is one part of FIVE. The bigger idea is to make it easier to encounter artists you might never have found otherwise, follow your own taste, and take part in a growing public record of people's choices.</p>
+      <div class="idea-principle">
+        <div><div class="idea-kicker">THE PRINCIPLE</div><h3>PEOPLE<br>DECIDE.<br>NOT CONNECTIONS.</h3></div>
+        <p>Everyone brings a different eye, background, and point of view. FIVE records real choices and makes those choices visible. It does not claim there is one objectively best artist — it shows what people choose, and how those choices change.</p>
+      </div>
+    </section>
+    <section class="idea-closeout">
+      <div><div class="idea-kicker">FIVE · GLOBAL ARTIST DISCOVERY</div><h2>MORE DISCOVERY.<br>MORE POSSIBILITIES.</h2><button type="button" class="idea-return" onclick="closeIdea();play()">START DISCOVERING&nbsp; ↗</button></div>
+      <p>Discover. Choose. Repeat.<br><br>Every call starts with looking.</p>
+    </section>
+  </div>
+</section>
+<script>
+(function(){
+  var overlay = document.getElementById('ideaOverlay');
+  var previousFocus = null;
+  window.openIdea = function(){
+    if(!overlay) return;
+    previousFocus = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    overlay.scrollTop = 0;
+    var closeButton = overlay.querySelector('.idea-close');
+    if(closeButton) closeButton.focus({preventScroll:true});
+    if(location.hash !== '#idea') history.replaceState(null, '', location.pathname + location.search + '#idea');
+  };
+  window.closeIdea = function(){
+    if(!overlay) return;
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+    if(location.hash === '#idea') history.replaceState(null, '', location.pathname + location.search);
+    if(previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus({preventScroll:true});
+  };
+  document.addEventListener('keydown', function(event){
+    if(event.key === 'Escape' && overlay && !overlay.hidden) window.closeIdea();
+  });
+  if(location.hash === '#idea') window.openIdea();
+})();
+</script>
+
+<footer class="site-footer"><button type="button" onclick="openIdea()">THE IDEA</button><a href="https://instagram.com/murtburner" target="_blank" rel="noopener">INSTAGRAM</a></footer>
 <script src="./app.js?v=five-restore-view-20261011-1"></script>
 <script>function toggleAuthMode(){if(window.setAuthMode){const t=document.getElementById("authTitle");window.setAuthMode(t&&t.textContent.trim()==="CREATE ACCOUNT"?"signin":"signup");}}</script>
 <script src="./five-password-recovery.js?v=20261011-magic-link-fix3"></script>
