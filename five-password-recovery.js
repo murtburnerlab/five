@@ -1,37 +1,47 @@
-/* FIVE — signup confirmation and password recovery.
-   Recovery callback handling must run on the same Supabase client that parsed the URL. */
+/* FIVE — password recovery flow.
+   Handles both Supabase PKCE (?code=...) and token-hash (#access_token=...&type=recovery)
+   callbacks, and prevents normal app startup from leaving the recovery screen. */
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
   let resetMode = false;
   let recoveryBusy = false;
-  let authEventHandlerAttached = false;
   let recoverySessionReady = false;
+  let authEventHandlerAttached = false;
 
   const originalSetAuthMode = window.setAuthMode;
   const originalSubmitAuth = window.submitAuth;
   const originalUpdateAuthUI = window.updateAuthUI;
 
   function client() {
-    return window.fiveSupabaseClient || window.supabase?.createClient?.(
+    // Prefer the app's shared client if the app exposes it; otherwise use a client
+    // with the same project and default Supabase auth storage key.
+    return window.fiveSupabaseClient || window.supabaseClient || window.supabase?.createClient?.(
       window.FIVE_SUPABASE_URL,
       window.FIVE_SUPABASE_KEY,
       { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
     );
   }
 
-  if (typeof originalUpdateAuthUI === "function") {
-    window.updateAuthUI = function() {
-      const result = originalUpdateAuthUI();
-      if (resetMode) {
-        if ($("authPassword")) $("authPassword").disabled = false;
-        if ($("authPasswordConfirm")) $("authPasswordConfirm").disabled = false;
-        if ($("authSubmit")) $("authSubmit").disabled = false;
-      }
-      return result;
-    };
+  const RECOVERY_MARKER = "five:password-recovery:v1";
+  function callbackIsRecovery() {
+    const q = new URLSearchParams(location.search);
+    const h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+    const urlSignalsRecovery = q.get("reset-password") === "1" &&
+      (q.has("code") || h.get("type") === "recovery" || h.has("access_token") || h.has("refresh_token"));
+    if (urlSignalsRecovery) {
+      try { sessionStorage.setItem(RECOVERY_MARKER, "1"); } catch (_) {}
+      return true;
+    }
+    try { return sessionStorage.getItem(RECOVERY_MARKER) === "1"; } catch (_) { return false; }
   }
 
+  function showMessage(text, type) {
+    const el = $("authMessage");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "message " + (type || "");
+  }
   function setConfirmVisible(visible) {
     const field = $("authPasswordConfirmField");
     if (field) field.classList.toggle("hidden", !visible);
@@ -44,11 +54,17 @@
   function showForgotPassword(visible) {
     $("fiveForgotPasswordLink")?.classList.toggle("hidden", !visible);
   }
-  function showMessage(text, type) {
-    const el = $("authMessage");
-    if (!el) return;
-    el.textContent = text;
-    el.className = "message " + (type || "");
+
+  if (typeof originalUpdateAuthUI === "function") {
+    window.updateAuthUI = function() {
+      const result = originalUpdateAuthUI();
+      if (resetMode) {
+        if ($("authPassword")) $("authPassword").disabled = false;
+        if ($("authPasswordConfirm")) $("authPasswordConfirm").disabled = false;
+        if ($("authSubmit")) $("authSubmit").disabled = !recoverySessionReady;
+      }
+      return result;
+    };
   }
 
   function buildRecoveryUI() {
@@ -79,15 +95,19 @@
       @media(max-width:520px){#fiveRecoveryDialog{padding:22px}#fiveRecoveryDialog .five-recovery-eyebrow{margin-top:30px}}
     `;
     document.head.appendChild(style);
+
     const link = document.createElement("button");
-    link.type = "button"; link.id = "fiveForgotPasswordLink"; link.textContent = "FORGOT PASSWORD?";
+    link.type = "button";
+    link.id = "fiveForgotPasswordLink";
+    link.textContent = "FORGOT PASSWORD?";
     link.addEventListener("click", openRecoveryDialog);
     const copy = $("authCopy");
     if (copy) copy.insertAdjacentElement("afterend", link);
     else auth.querySelector(".form")?.insertAdjacentElement("beforebegin", link);
 
     const overlay = document.createElement("div");
-    overlay.id = "fiveRecoveryOverlay"; overlay.className = "hidden";
+    overlay.id = "fiveRecoveryOverlay";
+    overlay.className = "hidden";
     overlay.innerHTML = `
       <section id="fiveRecoveryDialog" role="dialog" aria-modal="true" aria-labelledby="fiveRecoveryTitle">
         <div class="five-recovery-top"><div class="five-recovery-logo">F<span>I</span>VE</div><button type="button" class="five-recovery-close" id="fiveRecoveryClose" aria-label="Close dialog">×</button></div>
@@ -99,7 +119,9 @@
     $("fiveRecoveryClose").addEventListener("click", closeRecoveryDialog);
     overlay.addEventListener("click", event => { if (event.target === overlay) closeRecoveryDialog(); });
     $("fiveRecoveryForm").addEventListener("submit", sendRecoveryEmail);
-    document.addEventListener("keydown", event => { if (event.key === "Escape" && !overlay.classList.contains("hidden")) closeRecoveryDialog(); });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !overlay.classList.contains("hidden")) closeRecoveryDialog();
+    });
   }
 
   function openRecoveryDialog() {
@@ -121,9 +143,16 @@
     const email = $("fiveRecoveryEmail").value.trim().toLowerCase();
     const feedback = $("fiveRecoveryFeedback"), button = $("fiveRecoverySend");
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      feedback.textContent = "Enter a valid email address."; feedback.className = "error"; $("fiveRecoveryEmail").focus(); return;
+      feedback.textContent = "Enter a valid email address.";
+      feedback.className = "error";
+      $("fiveRecoveryEmail").focus();
+      return;
     }
-    recoveryBusy = true; button.disabled = true; button.textContent = "SENDING..."; feedback.textContent = ""; feedback.className = "";
+    recoveryBusy = true;
+    button.disabled = true;
+    button.textContent = "SENDING...";
+    feedback.textContent = "";
+    feedback.className = "";
     try {
       const supabase = client();
       if (!supabase) throw new Error("Authentication is temporarily unavailable. Please try again.");
@@ -131,11 +160,16 @@
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
       if (error) throw error;
       feedback.textContent = "If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.";
-      feedback.className = "success"; button.textContent = "EMAIL REQUESTED";
+      feedback.className = "success";
+      button.textContent = "EMAIL REQUESTED";
     } catch (error) {
       feedback.textContent = error?.message || "Could not send the reset email. Please try again.";
-      feedback.className = "error"; button.disabled = false; button.textContent = "SEND RESET LINK";
-    } finally { recoveryBusy = false; }
+      feedback.className = "error";
+      button.disabled = false;
+      button.textContent = "SEND RESET LINK";
+    } finally {
+      recoveryBusy = false;
+    }
   }
 
   function enterResetMode() {
@@ -143,22 +177,36 @@
     if (typeof originalSetAuthMode === "function") originalSetAuthMode("signin");
     if ($("authTitle")) $("authTitle").textContent = "RESET PASSWORD";
     if ($("authCopy")) $("authCopy").textContent = "Choose a new password for your FIVE account.";
-    if ($("authPassword")) { $("authPassword").disabled = false; $("authPassword").autocomplete = "new-password"; $("authPassword").value = ""; $("authPassword").placeholder = "New password"; }
-    setConfirmVisible(true); showForgotPassword(false);
+    if ($("authPassword")) {
+      $("authPassword").disabled = false;
+      $("authPassword").autocomplete = "new-password";
+      $("authPassword").value = "";
+      $("authPassword").placeholder = "New password";
+    }
+    setConfirmVisible(true);
+    showForgotPassword(false);
     $("authModeSwitch")?.classList.add("hidden");
-    if ($("authSubmit")) { $("authSubmit").textContent = "UPDATE PASSWORD"; $("authSubmit").disabled = !recoverySessionReady; }
+    if ($("authSubmit")) {
+      $("authSubmit").textContent = "UPDATE PASSWORD";
+      $("authSubmit").disabled = !recoverySessionReady;
+    }
     $("signOutButton")?.classList.add("hidden");
     $("auth")?.classList.remove("hidden");
-    document.querySelectorAll("main > .view").forEach(v => { if (v.id !== "auth") v.classList.add("hidden"); });
-    // Do NOT clear the callback URL here. Supabase must first consume its tokens.
+    document.querySelectorAll("main > .view").forEach(v => {
+      if (v.id !== "auth") v.classList.add("hidden");
+    });
   }
 
   if (typeof window.setAuthMode === "function") {
     window.setAuthMode = function(mode) {
       if (resetMode) resetMode = false;
       const result = originalSetAuthMode(mode);
-      setConfirmVisible(mode === "signup"); showForgotPassword(mode !== "signup");
-      if ($("authPassword")) { $("authPassword").autocomplete = mode === "signup" ? "new-password" : "current-password"; $("authPassword").placeholder = "Password"; }
+      setConfirmVisible(mode === "signup");
+      showForgotPassword(mode !== "signup");
+      if ($("authPassword")) {
+        $("authPassword").autocomplete = mode === "signup" ? "new-password" : "current-password";
+        $("authPassword").placeholder = "Password";
+      }
       $("authModeSwitch")?.classList.remove("hidden");
       return result;
     };
@@ -168,20 +216,39 @@
     window.submitAuth = async function() {
       if (resetMode) {
         if (!recoverySessionReady) return showMessage("This reset link is not ready or has expired. Request a new password reset email.", "error");
-        const password = $("authPassword").value, confirm = $("authPasswordConfirm").value;
+        const password = $("authPassword").value;
+        const confirm = $("authPasswordConfirm").value;
         if (password.length < 6) return showMessage("Use a password with at least 6 characters.", "error");
         if (password !== confirm) return showMessage("Passwords do not match. Please check both fields.", "error");
-        $("authSubmit").disabled = true; $("authSubmit").textContent = "UPDATING...";
-        const { error } = await client().auth.updateUser({ password });
-        $("authSubmit").disabled = false; $("authSubmit").textContent = "UPDATE PASSWORD";
-        if (error) return showMessage(error.message || "Could not update password. Request a new reset email and try again.", "error");
-        resetMode = false; recoverySessionReady = false;
-        $("authPassword").value = ""; $("authPasswordConfirm").value = ""; setConfirmVisible(false);
-        $("authTitle").textContent = "PASSWORD UPDATED";
-        $("authCopy").textContent = "Your password has been changed. Sign in with your new password.";
-        $("authSubmit").textContent = "SIGN IN"; $("authModeSwitch")?.classList.remove("hidden"); $("authModeSwitch").textContent = "CREATE ACCOUNT";
-        showForgotPassword(true);
-        showMessage("Password updated successfully. You can now sign in with your new password.", "success");
+        $("authSubmit").disabled = true;
+        $("authSubmit").textContent = "UPDATING...";
+        try {
+          const { error } = await client().auth.updateUser({ password });
+          if (error) throw error;
+          resetMode = false;
+          recoverySessionReady = false;
+          $("authPassword").value = "";
+          $("authPasswordConfirm").value = "";
+          setConfirmVisible(false);
+          $("authTitle").textContent = "PASSWORD UPDATED";
+          $("authCopy").textContent = "Your password has been changed. Sign in with your new password.";
+          $("authSubmit").textContent = "SIGN IN";
+          $("authModeSwitch")?.classList.remove("hidden");
+          $("authModeSwitch").textContent = "CREATE ACCOUNT";
+          showForgotPassword(true);
+          showMessage("Password updated successfully. You can now sign in with your new password.", "success");
+          // Explicitly sign out the recovery session so the user must authenticate
+          // with the newly chosen password.
+          const { error: signOutError } = await client().auth.signOut();
+          if (signOutError) console.warn("FIVE recovery sign-out:", signOutError.message);
+          recoverySessionReady = false;
+          try { sessionStorage.removeItem(RECOVERY_MARKER); } catch (_) {}
+        } catch (error) {
+          showMessage(error?.message || "Could not update password. Request a new reset email and try again.", "error");
+        } finally {
+          $("authSubmit").disabled = false;
+          $("authSubmit").textContent = resetMode ? "UPDATE PASSWORD" : "SIGN IN";
+        }
         return;
       }
       if ($("authTitle")?.textContent === "CREATE ACCOUNT") {
@@ -193,6 +260,31 @@
     };
   }
 
+  function activateRecoverySession(supabase) {
+    if (!callbackIsRecovery()) return;
+    enterResetMode();
+    // Let supabase-js finish processing the callback first. The auth event is the
+    // primary signal; getSession handles cases where the event fired before listener.
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        showMessage("This reset link is invalid or expired. Request a new password reset email.", "error");
+        return;
+      }
+      if (data?.session) {
+        recoverySessionReady = true;
+        enterResetMode();
+      } else {
+        // Give PKCE callback exchange a moment to complete; do not navigate away.
+        setTimeout(() => {
+          if (!recoverySessionReady && callbackIsRecovery()) {
+            enterResetMode();
+            showMessage("Verifying reset link… If this message remains, the link may be expired. Request a new one.", "");
+          }
+        }, 700);
+      }
+    }).catch(() => {});
+  }
+
   function watchRecoveryEvent() {
     const supabase = client();
     if (!supabase || authEventHandlerAttached) return;
@@ -202,24 +294,21 @@
         recoverySessionReady = !!session;
         enterResetMode();
         if ($("authSubmit")) $("authSubmit").disabled = !recoverySessionReady;
-      } else if (resetMode && session) {
+      } else if (resetMode && session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
         recoverySessionReady = true;
-        if ($("authSubmit")) $("authSubmit").disabled = false;
+        enterResetMode();
       }
     });
+    activateRecoverySession(supabase);
 
-    // Supabase may still be parsing the recovery URL after this script loads.
-    const isRecoveryUrl = new URLSearchParams(location.search).get("reset-password") === "1" &&
-      (location.hash.includes("type=recovery") || location.hash.includes("access_token=") || location.hash.includes("code="));
-    if (isRecoveryUrl) {
-      enterResetMode();
-      supabase.auth.getSession().then(({ data, error }) => {
-        if (!error && data?.session) {
-          recoverySessionReady = true;
-          enterResetMode();
-          if ($("authSubmit")) $("authSubmit").disabled = false;
-        }
-      });
+    // App startup currently calls home() after session initialization. While a
+    // recovery callback is present, keep restoring the reset screen if startup
+    // changes view visibility.
+    const main = document.querySelector("main");
+    if (main && callbackIsRecovery()) {
+      new MutationObserver(() => {
+        if (callbackIsRecovery() && resetMode && $("auth")?.classList.contains("hidden")) enterResetMode();
+      }).observe(main, { subtree: true, attributes: true, attributeFilter: ["class"] });
     }
   }
 
