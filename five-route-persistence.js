@@ -6,10 +6,17 @@
   let internal = false, lastRoute = null;
   const $ = id => document.getElementById(id);
   const visible = el => !!el && !el.classList.contains("hidden") && getComputedStyle(el).display !== "none";
+  function isAuthCallback() {
+    const q = new URLSearchParams(location.search);
+    const hash = location.hash || "";
+    return q.get("reset-password") === "1" ||
+      hash.includes("type=recovery") || hash.includes("access_token=") ||
+      hash.includes("refresh_token=") || hash.includes("code=");
+  }
   function current(){ for(const id of ROUTES) if(visible($(id))) return id; return null; }
   function readHash(){ const v=(location.hash||"").slice(1); return v && !/[=&/]/.test(v) && ROUTES.has(v) ? v : null; }
   function setRoute(route, replace=false){
-    if(!ROUTES.has(route)) return;
+    if(!ROUTES.has(route) || isAuthCallback()) return;
     lastRoute=route;
     try{sessionStorage.setItem(STORAGE,route)}catch(_){}
     const hash="#"+route;
@@ -40,17 +47,18 @@
     }catch(_){}
   }
   function restore(){
+    if(isAuthCallback()) return; // Never replace Supabase recovery tokens with an app route.
     let route=readHash();
     if(!route){try{route=sessionStorage.getItem(STORAGE)}catch(_){}}
     if(!ROUTES.has(route))route="home";
-    setTimeout(()=>{go(route);setRoute(route,true);restoreResult()},350);
+    setTimeout(()=>{if(isAuthCallback())return;go(route);setRoute(route,true);restoreResult()},350);
   }
   function observe(){
-    new MutationObserver(()=>{if(internal)return;const route=current();if(route&&route!==lastRoute)setRoute(route)})
+    new MutationObserver(()=>{if(internal||isAuthCallback())return;const route=current();if(route&&route!==lastRoute)setRoute(route)})
       .observe(document.querySelector("main")||document.body,{subtree:true,attributes:true,attributeFilter:["class","style"]});
   }
-  window.addEventListener("popstate",()=>{const r=readHash();if(!r)return;internal=true;go(r);lastRoute=r;queueMicrotask(()=>internal=false)});
-  window.addEventListener("hashchange",()=>{if(internal)return;const r=readHash();if(r&&r!==current())go(r)});
+  window.addEventListener("popstate",()=>{if(isAuthCallback())return;const r=readHash();if(!r)return;internal=true;go(r);lastRoute=r;queueMicrotask(()=>internal=false)});
+  window.addEventListener("hashchange",()=>{if(internal||isAuthCallback())return;const r=readHash();if(r&&r!==current())go(r)});
   window.addEventListener("five:call-recorded",()=>{
     try{sessionStorage.setItem("five:last-result:v3",JSON.stringify({chosen:$("chosen")?.textContent||"",meta:$("chosenMeta")?.textContent||"",count:$("resultCount")?.textContent||"",next:$("nextCheck")?.textContent||"",progress:$("resultProgress")?.style.width||"10%",caption:$("progressCaption")?.textContent||""}))}catch(_){}
   });
