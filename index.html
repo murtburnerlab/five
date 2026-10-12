@@ -126,6 +126,53 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 </main>
 
 <style>
+
+/* FOR ARTISTS & PRESS — public-facing explanation */
+.press-overlay{position:fixed;inset:0;z-index:1001;background:var(--bg);color:var(--fg);overflow-y:auto;overscroll-behavior:contain}
+.press-overlay[hidden]{display:none!important}
+.press-shell{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:0 0 54px}
+.press-topbar{height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line)}
+.press-wordmark{font-size:30px;font-weight:800;letter-spacing:-.08em}
+.press-wordmark .pi,.press-wordmark .pv{color:#1685ff}
+.press-close{border:1px solid var(--fg);background:transparent;color:var(--fg);padding:11px 14px;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.press-close:hover{background:var(--fg);color:var(--bg)}
+.press-hero{padding:clamp(58px,9vw,118px) 0 70px;border-bottom:1px solid var(--fg)}
+.press-kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.press-hero h1{max-width:980px;font-size:clamp(48px,9.5vw,120px);line-height:.84;letter-spacing:-.09em;margin:24px 0 30px;font-weight:800}
+.press-lead{max-width:760px;font-size:clamp(19px,2.4vw,28px);line-height:1.25;letter-spacing:-.03em;margin:0}
+.press-intro{display:grid;grid-template-columns:.7fr 1.3fr;gap:42px;padding:38px 0 65px;border-bottom:1px solid var(--line)}
+.press-intro p{font-size:16px;line-height:1.6;margin:0;max-width:760px}
+.press-section{padding:64px 0;border-bottom:1px solid var(--line)}
+.press-section-head{display:grid;grid-template-columns:.7fr 1.3fr;gap:35px;align-items:start;margin-bottom:32px}
+.press-section h2{font-size:clamp(36px,5.8vw,68px);line-height:.9;letter-spacing:-.075em;margin:0;font-weight:800}
+.press-steps{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--fg)}
+.press-step{padding:18px 18px 0 0;margin-right:16px;min-height:172px}
+.press-step-num{font-size:10px;color:var(--muted);letter-spacing:.12em}
+.press-step h3{font-size:20px;letter-spacing:-.04em;margin:24px 0 10px}
+.press-step p{font-size:12px;line-height:1.55;color:var(--muted);margin:0}
+.press-dark{background:#111;color:#f7f6f2;padding:clamp(26px,5vw,60px);display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:end;margin-top:36px}
+.press-dark .press-kicker{color:#aaa69f}
+.press-dark h2{font-size:clamp(36px,5.7vw,68px);line-height:.88;letter-spacing:-.075em;margin:18px 0 0}
+.press-dark p{font-size:14px;line-height:1.6;color:#d1cec8;margin:0}
+.press-quote{font-size:clamp(28px,4.5vw,52px);font-weight:800;letter-spacing:-.06em;line-height:.95;max-width:800px;margin:0}
+.press-bottom{padding:64px 0 24px;display:flex;justify-content:space-between;align-items:end;gap:30px}
+.press-bottom h2{font-size:clamp(38px,6.5vw,78px);line-height:.88;letter-spacing:-.08em;margin:14px 0 0}
+.press-bottom p{font-size:12px;line-height:1.5;color:var(--muted);max-width:280px;margin:0}
+.press-action{border:0;background:#111;color:#fff;padding:17px 22px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-top:24px}
+.press-action:hover{background:#333}
+@media(max-width:700px){
+ .press-shell{width:calc(100% - 30px)}
+ .press-topbar{height:68px}
+ .press-intro,.press-section-head,.press-dark{grid-template-columns:1fr;gap:22px}
+ .press-intro{padding:28px 0 46px}
+ .press-section{padding:48px 0}
+ .press-steps{grid-template-columns:1fr 1fr}
+ .press-step{min-height:150px;padding-top:16px}
+ .press-dark{padding:26px}
+ .press-bottom{padding-top:48px;display:block}
+ .press-bottom p{margin-top:24px}
+}
+
 /* THE IDEA — integrated FIVE information overlay */
 .idea-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg);color:var(--fg);overflow-y:auto;overscroll-behavior:contain}
 .idea-overlay[hidden]{display:none!important}
@@ -215,6 +262,86 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
     </section>
   </div>
 </section>
+<section id="pressOverlay" class="press-overlay" role="dialog" aria-modal="true" aria-labelledby="pressTitle" hidden>
+  <div class="press-shell">
+    <div class="press-topbar">
+      <div class="press-wordmark" aria-label="FIVE">F<span class="pi">I</span><span class="pv">V</span>E</div>
+      <button type="button" class="press-close" onclick="closePress()">CLOSE</button>
+    </div>
+    <section class="press-hero">
+      <div class="press-kicker">FOR ARTISTS &amp; PRESS · FIVE</div>
+      <h1 id="pressTitle">DISCOVERY<br>SHOULD NOT<br>BE A PRIVILEGE.</h1>
+      <p class="press-lead">FIVE is an artist-discovery platform built to help people encounter contemporary artists beyond the names and networks they already know — and make up their own minds.</p>
+    </section>
+    <section class="press-intro">
+      <div class="press-kicker">THE PURPOSE</div>
+      <p>Art should have a chance to be seen before someone has a large following, influential connections, or an established place in the conversation. FIVE puts discovery first. It invites people to look at artists, choose what resonates with them, and help build a public record of real choices.</p>
+    </section>
+    <section class="press-section">
+      <div class="press-section-head">
+        <div class="press-kicker">01 / THE EXPERIENCE</div>
+        <h2>FIVE ARTISTS.<br>ONE CHOICE.</h2>
+      </div>
+      <div class="press-steps">
+        <article class="press-step"><div class="press-step-num">01</div><h3>Discover</h3><p>Each round presents a small group of artists from the FIVE database.</p></article>
+        <article class="press-step"><div class="press-step-num">02</div><h3>Look</h3><p>People can explore the artists and their work instead of relying only on reputation or recommendations.</p></article>
+        <article class="press-step"><div class="press-step-num">03</div><h3>Choose</h3><p>Each choice is recorded as a real user action. No votes or audience reactions are invented.</p></article>
+        <article class="press-step"><div class="press-step-num">04</div><h3>See the picture</h3><p>Recorded choices contribute to the public ranking, showing how interest develops over time.</p></article>
+      </div>
+    </section>
+    <section class="press-section">
+      <div class="press-section-head">
+        <div class="press-kicker">02 / HOW DISCOVERY WORKS</div>
+        <h2>VISIBILITY<br>IS NOT THE SAME<br>AS POPULARITY.</h2>
+      </div>
+      <p style="font-size:15px;line-height:1.65;max-width:760px;margin:0">FIVE is designed to keep discovery moving. An artist who has just been approved is new to the system, so the platform gives that artist more opportunities to be encountered than artists who have already been shown repeatedly. As artists enter the system and people make choices, the discovery mix evolves.</p>
+      <div class="press-dark">
+        <div><div class="press-kicker">THE PRINCIPLE</div><h2>NEW NAMES<br>DESERVE A<br>REAL CHANCE.</h2></div>
+        <p>The public ranking records people's choices; it does not decide what anyone should like. Exposure creates an opportunity to be considered, not a guaranteed vote. Every person remains free to choose the artist they genuinely prefer.</p>
+      </div>
+    </section>
+    <section class="press-section">
+      <div class="press-section-head">
+        <div class="press-kicker">03 / WHY IT MATTERS</div>
+        <h2>YOUR TASTE.<br>YOUR DECISION.</h2>
+      </div>
+      <p class="press-quote">“People decide. Not connections.”</p>
+      <p style="font-size:15px;line-height:1.65;max-width:760px;margin:26px 0 0">FIVE is not here to tell people which artist is objectively the best. It is here to help people find artists they might otherwise miss, trust their own response to the work, and make those choices visible. For artists, that means a chance to be discovered outside their existing audience. For the public, it means more possibilities and a more personal way into contemporary art.</p>
+    </section>
+    <section class="press-bottom">
+      <div><div class="press-kicker">FIVE · GLOBAL ARTIST DISCOVERY</div><h2>LOOK FIRST.<br>DECIDE YOURSELF.</h2><button type="button" class="press-action" onclick="closePress();submitArtist()">SUBMIT YOUR ARTIST PROFILE</button></div>
+      <p>For press enquiries and artist submissions, use the links on FIVE or contact the team through the official channels.</p>
+    </section>
+  </div>
+</section>
+<script>
+(function(){
+  var overlay = document.getElementById('pressOverlay');
+  var previousFocus = null;
+  window.openPress = function(){
+    if(!overlay) return;
+    previousFocus = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    overlay.scrollTop = 0;
+    var closeButton = overlay.querySelector('.press-close');
+    if(closeButton) closeButton.focus({preventScroll:true});
+    if(location.hash !== '#press') history.replaceState(null, '', location.pathname + location.search + '#press');
+  };
+  window.closePress = function(){
+    if(!overlay) return;
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+    if(location.hash === '#press') history.replaceState(null, '', location.pathname + location.search);
+    if(previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus({preventScroll:true});
+  };
+  document.addEventListener('keydown', function(event){
+    if(event.key === 'Escape' && overlay && !overlay.hidden) window.closePress();
+  });
+  if(location.hash === '#press') window.openPress();
+})();
+</script>
+
 <script>
 (function(){
   var overlay = document.getElementById('ideaOverlay');
@@ -243,7 +370,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 })();
 </script>
 
-<footer class="site-footer"><button type="button" onclick="openIdea()">THE IDEA</button><a href="https://www.instagram.com/fourfive_art/" target="_blank" rel="noopener">INSTAGRAM</a></footer>
+<footer class="site-footer"><div style="display:flex;gap:24px;flex-wrap:wrap"><button type="button" onclick="openIdea()">THE IDEA</button><button type="button" onclick="openPress()">FOR ARTISTS &amp; PRESS</button></div><a href="https://www.instagram.com/fourfive_art/" target="_blank" rel="noopener">INSTAGRAM</a></footer>
 <script src="./app.js?v=five-restore-view-20261011-1"></script>
 <script>function toggleAuthMode(){if(window.setAuthMode){const t=document.getElementById("authTitle");window.setAuthMode(t&&t.textContent.trim()==="CREATE ACCOUNT"?"signin":"signup");}}</script>
 <script src="./five-password-recovery.js?v=20261011-magic-link-fix3"></script>
