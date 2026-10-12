@@ -137,6 +137,22 @@
     return renderAndShare({type:"calls",label:"MY DISCOVERY",total:totalCalls(),shareTitle:"My FIVE discovery history",shareText:`${totalCalls()} real calls on FIVE`});
   };
 
+  // YOUR EYE > SHARE MY STORY uses the same progress-card template/data as the former Account > SHARE MY LEVEL.
+  window.shareMyStory = async function() {
+    const total = totalCalls();
+    const milestone = [...milestones].reverse().find(m => total >= m.count);
+    const title = milestone?.title || "FIRST CALL";
+    return renderAndShare({
+      type: "achievement",
+      label: "MY FIVE PROGRESS",
+      title,
+      count: total,
+      detail: "My discovery history is growing on FIVE.",
+      shareTitle: "My FIVE progress",
+      shareText: `${total} real calls on FIVE`
+    });
+  };
+
   // Route 2: account progress and achievement buttons. These must never call shareEye.
   document.addEventListener("click", event=>{
     const achievementBtn=event.target.closest("#fiveAchievementShare");

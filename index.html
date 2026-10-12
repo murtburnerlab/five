@@ -44,6 +44,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 #grid .card-actions .choose{color:#fff;background:#111;border:1px solid #111}
 #grid .card-actions button:disabled{opacity:.5}
 @media(max-width:520px){#grid{grid-template-columns:1fr;gap:10px}#grid .card{height:155px;min-height:0;padding:13px}}
+#fiveShareProgress{display:none!important}
 </style>
 </head>
 <body>
@@ -105,7 +106,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <section id="eye" class="view hidden">
 <div class="section-head"><div><div class="eyebrow">YOUR SIGNAL</div><div class="section-title">YOUR EYE</div></div><div class="round" id="eyeCount">0 CALLS</div></div>
 <div id="eyeIntro" class="report"><div class="eyebrow">BUILDING</div><h3 id="eyeHeadline">Your eye is starting to form.</h3><div class="small" id="eyeCopy">Make 10 calls to unlock your first measurable signal.</div></div>
-<div class="report" id="eyeMilestonePanel"><div class="eyebrow">YOUR LEVEL</div><h3 id="eyeLevelTitle">FIRST CALL</h3><div class="small" id="eyeLevelCopy">Make real calls to unlock achievements.</div><div class="progress" style="height:4px;background:#d6d2ca;margin-top:18px"><span id="eyeLevelProgress" style="display:block;height:4px;width:0;background:#1685ff"></span></div><div class="share" style="margin-top:18px"><button class="primary" onclick="shareEye()">SHARE MY STORY</button></div></div>
+<div class="report" id="eyeMilestonePanel"><div class="eyebrow">YOUR LEVEL</div><h3 id="eyeLevelTitle">FIRST CALL</h3><div class="small" id="eyeLevelCopy">Make real calls to unlock achievements.</div><div class="progress" style="height:4px;background:#d6d2ca;margin-top:18px"><span id="eyeLevelProgress" style="display:block;height:4px;width:0;background:#1685ff"></span></div><div class="share" style="margin-top:18px"><button class="primary" onclick="shareMyStory()">SHARE MY STORY</button></div></div>
 <div class="eye-grid" id="metrics"></div><div class="eye-two">
 <div class="report"><div class="eyebrow">YOUR FIVE</div><h3>Artists you keep choosing.</h3><div id="fiveList" class="five-list"></div></div>
 <div class="report"><div class="eyebrow">BEST CALL</div><h3 id="bestCall">—</h3><div class="small" id="bestCallCopy">Make more calls to build your history.</div><div class="share"><button class="primary" onclick="shareEye()">SHARE YOUR EYE</button></div></div>
@@ -249,7 +250,7 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 <script src="./five-auth-buttons.js"></script>
 <script src="./five-account-ui.js?v=20261009-ranks-fix2"></script>
 <script src="./five-route-persistence.js?v=20261011-route-fix3"></script>
-<script src="./five-share-stories.js?v=20261011-wordmark-iv-1"></script>
+<script src="./five-share-stories.js?v=20261012-eye-level-template-1"></script>
 <script src="./five-share-rank.js?v=20261011-wordmark-iv-1"></script>
 </body>
 </html>
