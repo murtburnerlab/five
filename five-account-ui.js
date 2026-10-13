@@ -127,9 +127,7 @@
     {count:3000,title:"CULTURE SHAPER",copy:"3,000 real calls. You have built an extensive discovery history."},
     {count:5000,title:"FIVE LEGEND",copy:"5,000 real calls. You have reached the highest current FIVE milestone."}
   ];
-  let activeAchievement = null;
   function showAchievement(item) {
-    activeAchievement = item;
     document.getElementById("fiveAchievementMark").textContent = String(item.count).padStart(2,"0");
     document.getElementById("fiveAchievementTitle").textContent = item.title;
     document.getElementById("fiveAchievementCopy").textContent = item.copy;
@@ -137,32 +135,6 @@
   }
   document.getElementById("fiveAchievementClose").addEventListener("click",()=>{achievementModal.hidden=true;});
   achievementModal.addEventListener("click",event=>{if(event.target===achievementModal)achievementModal.hidden=true;});
-  document.getElementById("fiveAchievementShare").addEventListener("click",async()=>{if(activeAchievement)await shareStoryCard({type:"achievement",title:activeAchievement.title,subtitle:`LEVEL ${activeAchievement.count}`,detail:activeAchievement.copy});});
-  document.getElementById("fiveShareProgress").addEventListener("click",async()=>{
-    const total=Number(document.getElementById("homeCalls").textContent)||0;
-    const milestone=[...fiveMilestones].reverse().find(item=>total>=item.count)||{count:0,title:"FIRST CALL",copy:"Start making real calls to build your personal discovery record."};
-    await shareStoryCard({type:"achievement",title:milestone.title,subtitle:`${total} REAL CALLS`,detail:"My discovery history is growing on FIVE."});
-  });
-
-  async function shareStoryCard({type="achievement",title="FIVE",subtitle="MY DISCOVERY",detail=""}) {
-    const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1920;const ctx=canvas.getContext("2d");
-    ctx.fillStyle="#f1efe9";ctx.fillRect(0,0,1080,1920);ctx.fillStyle="#1685ff";ctx.fillRect(72,86,120,12);
-    ctx.fillStyle="#111111";ctx.font="900 72px Arial";ctx.fillText("FIVE",72,190);ctx.strokeStyle="#111111";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(72,235);ctx.lineTo(1008,235);ctx.stroke();
-    ctx.fillStyle="#77736c";ctx.font="500 28px Arial";ctx.fillText(type==="artist"?"MY MOST-CHOSEN ARTIST":"ACHIEVEMENT UNLOCKED",72,330);
-    ctx.fillStyle="#111111";ctx.font="900 92px Arial";const words=String(title).toUpperCase().split(" ");let lines=[],line="";
-    words.forEach(word=>{const test=line?line+" "+word:word;if(ctx.measureText(test).width>900&&line){lines.push(line);line=word;}else line=test;});if(line)lines.push(line);
-    let y=520;lines.slice(0,3).forEach(text=>{ctx.fillText(text,72,y);y+=104;});
-    ctx.fillStyle="#1685ff";ctx.font="700 32px Arial";ctx.fillText(String(subtitle).toUpperCase(),72,y+32);ctx.fillStyle="#111111";ctx.fillRect(72,y+88,936,5);
-    ctx.fillStyle="#55524c";ctx.font="400 34px Arial";const detailWords=String(detail).split(" ");let dline="",dy=y+160;
-    detailWords.forEach(word=>{const test=dline?dline+" "+word:word;if(ctx.measureText(test).width>900&&dline){ctx.fillText(dline,72,dy);dy+=48;dline=word;}else dline=test;});if(dline)ctx.fillText(dline,72,dy);
-    ctx.fillStyle="#111111";ctx.fillRect(72,1660,936,180);ctx.fillStyle="#f1efe9";ctx.font="700 28px Arial";ctx.fillText("DISCOVER. CHOOSE. RANK.",108,1730);
-    ctx.fillStyle="#1685ff";ctx.font="900 46px Arial";ctx.fillText("FIVE",108,1795);ctx.fillStyle="#77736c";ctx.font="400 24px Arial";ctx.fillText("fourfive.art",72,1880);
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));if(!blob){say("Could not create the share image. Please try again.");return;}
-    const file=new File([blob],"five-story.png",{type:"image/png"});
-    try {if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({files:[file],title:"My FIVE achievement",text:`${title} — ${subtitle}`});}else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="five-story.png";a.click();URL.revokeObjectURL(a.href);say("Story image saved. Upload it to Instagram Stories.",true);}}
-    catch(error){if(error?.name!=="AbortError")say("Sharing was unavailable. Try again or save the story image.");}
-  }
-
   function renderUnlocks(total,userId,allowPopup=false) {
     const milestones=[
       {count:10,title:"YOUR EYE",note:"Unlock your personal choice-history summary and see which artists you choose most often."},
