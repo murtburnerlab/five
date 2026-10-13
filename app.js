@@ -23,7 +23,7 @@ const ADMIN_PAGE_SIZE = 20;
 let rankingPage = 1;
 const RANKING_PAGE_SIZE = 30;
 function fiveVisitorId(){try{let id=localStorage.getItem("five_visitor_id");if(!id){id=crypto.randomUUID?crypto.randomUUID():"v-"+Date.now()+Math.random().toString(36).slice(2);localStorage.setItem("five_visitor_id",id)}return id}catch(_){return "v-"+Date.now()+Math.random().toString(36).slice(2)}}
-function trackEvent(type){try{supabaseClient.rpc("five_track_event",{p_event_type:type,p_visitor_id:fiveVisitorId(),p_path:location.pathname}).then(({error})=>{if(error)console.warn("FIVE analytics failed",error.message)})}catch(_){}}
+function trackEvent(type){try{if(localStorage.getItem("five_analytics_consent")!=="accepted")return;supabaseClient.rpc("five_track_event",{p_event_type:type,p_visitor_id:fiveVisitorId(),p_path:location.pathname}).then(({error})=>{if(error)console.warn("FIVE analytics failed",error.message)})}catch(_){}}
 
 function show(id) {
   views.forEach(v => $(v)?.classList.add("hidden"));
