@@ -122,6 +122,8 @@
     ctx.fillStyle = FG;
     ctx.fillRect(72, 1610, 936, 170);
     ctx.fillStyle = "#ffffff";
+    ctx.font = "800 28px Arial, Helvetica, sans-serif";
+    ctx.fillText("DISCOVER. CHOOSE. RANK.", 108, 1665);
     ctx.font = "800 52px Arial, Helvetica, sans-serif";
     let footerLogoX = 108;
     for (const glyph of ["F", "I", "V", "E"]) {
