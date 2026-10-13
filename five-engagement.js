@@ -52,7 +52,11 @@
   // app.js dispatches this only after record_call returns successfully.
   // This fills the existing call_cast analytics event without counting failed attempts.
   window.addEventListener("five:call-recorded", () => {
+    // Analytics is optional: do not send this event unless the visitor accepted analytics.
+    // The actual artist choice is saved separately by app.js and must remain unaffected.
     try {
+      if (localStorage.getItem("five_analytics_consent") !== "accepted") return;
+
       client.rpc("five_track_event", {
         p_event_type: "call_cast",
         p_visitor_id: visitorId(),
