@@ -22,6 +22,10 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 .submit,.auth{max-width:650px}.form{border-top:0;margin-top:22px}.field{padding:15px 0;border-bottom:1px solid var(--line)}.field label{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}.field input{width:100%;border:0;border-bottom:1px solid #aaa;background:transparent;padding:8px 0;font-size:17px;outline:0;color:var(--fg)}.submit-note{font-size:11px;color:var(--muted);line-height:1.45;margin:18px 0}.message{border-top:1px solid #111;border-bottom:1px solid var(--line);padding:15px 0;margin:18px 0;font-size:12px;line-height:1.45}.message.error{color:var(--red)}.message.success{color:var(--green)}#authMessage:not(.error):not(.success){display:none!important}.auth-actions{display:flex;gap:8px;flex-wrap:nowrap;margin-top:18px}.auth-actions button{flex:1 1 0;min-width:0;min-height:56px;display:flex;align-items:center;justify-content:center;padding:15px 10px}.auth-switch{display:none}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modalbox{width:min(480px,100%);background:var(--bg);padding:26px}.modaltop{display:flex;justify-content:space-between}.close{border:0;background:none;font-size:25px;padding:0}.modal h2{font-size:44px;letter-spacing:-.06em;line-height:.9;margin:45px 0 7px}.modal p{font-size:12px;color:#555;line-height:1.45}.modal a{display:inline-block;margin:15px 0 20px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
 .site-footer{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:22px 0 30px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px}.site-footer button,.site-footer a{border:0;background:none;padding:0;color:#111;font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+.site-footer .footer-primary-links,.site-footer .footer-secondary-links{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.site-footer .footer-secondary-links{justify-content:flex-end}
+.site-footer button,.site-footer a{line-height:1.5}
+@media(max-width:700px){.site-footer{flex-direction:column;align-items:flex-start}.site-footer .footer-primary-links,.site-footer .footer-secondary-links{gap:14px}.site-footer .footer-secondary-links{justify-content:flex-start}}
 @media(max-width:850px){header{gap:12px;padding:0 18px}.topnav{gap:12px}.counter{max-width:100px}.home{grid-template-columns:1fr;gap:45px}.grid{grid-template-columns:1fr 1fr}.card{min-height:280px}.call-card{grid-template-columns:55px 1fr 100px}.call-card .status{grid-column:2/4}.eye-grid{grid-template-columns:1fr}.eye-two{grid-template-columns:1fr}.rank-row{grid-template-columns:50px 1fr 90px}.rank-row .rank-choice{grid-column:3;text-transform:uppercase}}
 @media(max-width:520px){header{height:76px;padding:0 28px;gap:18px}.topnav{gap:22px;font-size:10px;letter-spacing:.13em}.topnav .nav-submit{padding:11px 12px;font-size:10px;letter-spacing:.08em}.submit-artist-promo{align-items:flex-start;flex-direction:column;gap:20px;padding-top:22px}.submit-promo-link{width:100%;justify-content:space-between}.counter{display:none}main{padding:28px 15px 48px}.grid{grid-template-columns:1fr}.card{min-height:210px}.home-title{font-size:76px}.home{gap:36px;min-height:auto}.home-sub{font-size:17px}.stat-value{font-size:48px}.home-ranking-head{align-items:flex-start}.home-rank-name{font-size:14px}.site-footer{width:calc(100% - 30px);padding:20px 0 28px}.section-title{font-size:54px}.call-card{grid-template-columns:48px 1fr}.call-card .movement{grid-column:2;text-align:left}.call-card .status{grid-column:2}.rank-row{grid-template-columns:40px 1fr}.rank-row .rank-choice{grid-column:2;text-align:left;text-transform:uppercase}.rank-row .rank-choice:before{content:none}.rank-row .rank-choice:nth-child(4):before{content:none}}
 .submit-artist-promo{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:32px;border-top:1px solid #111;padding:25px 0 8px;margin-top:2px}.submit-promo-copy{max-width:600px}.submit-promo-copy h2{font-size:clamp(26px,4vw,46px);letter-spacing:-.065em;line-height:.95;margin:12px 0}.submit-promo-copy p{font-size:14px;line-height:1.5;color:var(--muted);max-width:540px;margin:0}.submit-promo-link{flex-shrink:0;display:inline-flex;align-items:center;gap:18px;background:#111;color:#fff;text-decoration:none;padding:18px 20px;font-size:10px;letter-spacing:.1em;font-weight:700}.submit-promo-link:hover{background:#333}
@@ -370,7 +374,18 @@ main{min-height:calc(100vh - 76px);padding:42px 24px 65px}.view{width:min(1120px
 })();
 </script>
 
-<footer class="site-footer"><div style="display:flex;gap:24px;flex-wrap:wrap"><button type="button" onclick="openIdea()">THE IDEA</button><button type="button" onclick="openPress()">ABOUT FIVE</button></div><a href="https://www.instagram.com/fourfive_art/" target="_blank" rel="noopener">INSTAGRAM</a></footer>
+<footer class="site-footer">
+  <div class="footer-primary-links">
+    <button type="button" onclick="openIdea()">THE IDEA</button>
+    <button type="button" onclick="openPress()">ABOUT FIVE</button>
+  </div>
+  <div class="footer-secondary-links">
+    <a href="https://www.instagram.com/fourfive_art/" target="_blank" rel="noopener">INSTAGRAM</a>
+    <a href="./legal.html#privacy">PRIVACY POLICY</a>
+    <a href="./legal.html#terms">TERMS OF USE</a>
+    <a href="./legal.html#artists">ARTIST LISTING &amp; REMOVAL</a>
+  </div>
+</footer>
 <script src="./app.js?v=five-restore-view-20261011-1"></script>
 <script>function toggleAuthMode(){if(window.setAuthMode){const t=document.getElementById("authTitle");window.setAuthMode(t&&t.textContent.trim()==="CREATE ACCOUNT"?"signin":"signup");}}</script>
 <script src="./five-password-recovery.js?v=20261011-magic-link-fix3"></script>
