@@ -6,7 +6,7 @@
   const FG = "#111111";
   const MUTED = "#77736c";
   const LINE = "#d6d2ca";
-  const SITE_URL = "https://murtburnerlab.github.io/five/";
+  const SITE_URL = "https://fourfive.art/";
 
   function fitText(ctx, text, maxWidth, startSize, minSize, weight = 800) {
     let size = startSize;
@@ -131,7 +131,7 @@
     }
     ctx.fillStyle = "#b9b6af";
     ctx.font = "400 20px Arial, Helvetica, sans-serif";
-    ctx.fillText("murtburnerlab.github.io/five", 72, 1840);
+    ctx.fillText("fourfive.art", 72, 1840);
     ctx.fillStyle = MUTED;
     ctx.textAlign = "right";
     ctx.font = "700 18px Arial, Helvetica, sans-serif";

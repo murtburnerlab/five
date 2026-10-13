@@ -156,7 +156,7 @@
     ctx.fillStyle="#55524c";ctx.font="400 34px Arial";const detailWords=String(detail).split(" ");let dline="",dy=y+160;
     detailWords.forEach(word=>{const test=dline?dline+" "+word:word;if(ctx.measureText(test).width>900&&dline){ctx.fillText(dline,72,dy);dy+=48;dline=word;}else dline=test;});if(dline)ctx.fillText(dline,72,dy);
     ctx.fillStyle="#111111";ctx.fillRect(72,1660,936,180);ctx.fillStyle="#f1efe9";ctx.font="700 28px Arial";ctx.fillText("DISCOVER. CHOOSE. RANK.",108,1730);
-    ctx.fillStyle="#1685ff";ctx.font="900 46px Arial";ctx.fillText("FIVE",108,1795);ctx.fillStyle="#77736c";ctx.font="400 24px Arial";ctx.fillText("murtburnerlab.github.io/five",72,1880);
+    ctx.fillStyle="#1685ff";ctx.font="900 46px Arial";ctx.fillText("FIVE",108,1795);ctx.fillStyle="#77736c";ctx.font="400 24px Arial";ctx.fillText("fourfive.art",72,1880);
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));if(!blob){say("Could not create the share image. Please try again.");return;}
     const file=new File([blob],"five-story.png",{type:"image/png"});
     try {if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({files:[file],title:"My FIVE achievement",text:`${title} — ${subtitle}`});}else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="five-story.png";a.click();URL.revokeObjectURL(a.href);say("Story image saved. Upload it to Instagram Stories.",true);}}

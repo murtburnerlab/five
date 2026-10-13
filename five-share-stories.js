@@ -54,7 +54,7 @@
     ctx.fillStyle=C.ink; ctx.fillRect(72,1630,936,190);
     ctx.fillStyle=C.white; ctx.font="700 26px Arial, Helvetica, sans-serif"; ctx.fillText("DISCOVER. CHOOSE. RANK.",108,1698);
     wordmark(ctx,108,1780,45,C.white);
-    ctx.fillStyle="#b9b5ad"; ctx.font="400 21px Arial, Helvetica, sans-serif"; ctx.fillText("murtburnerlab.github.io/five",72,1874);
+    ctx.fillStyle="#b9b5ad"; ctx.font="400 21px Arial, Helvetica, sans-serif"; ctx.fillText("fourfive.art",72,1874);
     ctx.fillStyle=C.blue; ctx.fillRect(930,1855,78,12);
   }
   function artistCard(ctx, name, count) {
@@ -112,7 +112,7 @@
     if(!blob)throw new Error("Could not create image");
     const file=new File([blob],`five-${data.type}.png`,{type:"image/png"});
     if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
-      await navigator.share({files:[file],title:data.shareTitle||"FIVE",text:data.shareText||"Discover. Choose. Rank. https://murtburnerlab.github.io/five/"});
+      await navigator.share({files:[file],title:data.shareTitle||"FIVE",text:data.shareText||"Discover. Choose. Rank. https://fourfive.art/"});
     } else {
       const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`five-${data.type}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
       alert("Story image saved. Upload it to Instagram Stories.");
