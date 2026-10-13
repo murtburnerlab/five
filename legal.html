@@ -22,6 +22,12 @@ h1{font-size:clamp(54px,9vw,100px);font-weight:800;line-height:.84;letter-spacin
 .legal-nav{display:flex;flex-wrap:wrap;gap:8px;padding:22px 0 28px;border-bottom:1px solid var(--line)}
 .legal-nav a{display:inline-block;border:1px solid var(--line);padding:10px 12px;text-decoration:none;font-size:10px;letter-spacing:.09em;text-transform:uppercase;transition:background .15s,color .15s,border-color .15s}
 .legal-nav a:hover,.legal-nav a:focus-visible{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.contact-strip{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 0 20px;border-bottom:1px solid var(--line)}
+.contact-strip-copy{margin:0;color:var(--muted);font-size:11px;line-height:1.5;letter-spacing:.02em}
+.contact-strip-copy strong{display:block;color:var(--fg);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+.contact-cta{flex:0 0 auto;display:inline-flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--fg);text-decoration:none;font-size:10px;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;transition:background .15s,color .15s}
+.contact-cta:hover,.contact-cta:focus-visible{background:var(--fg);color:var(--bg)}
+.contact-cta span{font-size:16px;line-height:1}
 .notice{border-left:3px solid var(--blue);background:var(--paper);padding:15px 18px;margin:24px 0 0;font-size:12px;line-height:1.5;color:#555}
 main{padding:0 0 48px}section{padding:42px 0;border-bottom:1px solid var(--line);scroll-margin-top:100px}
 h2{font-size:clamp(32px,5vw,52px);font-weight:800;letter-spacing:-.07em;line-height:.95;margin:0 0 24px}
@@ -29,7 +35,7 @@ h3{font-size:15px;letter-spacing:-.02em;margin:28px 0 7px}
 p,li{color:#333;font-size:14px;line-height:1.65}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.92em;background:var(--soft);padding:2px 4px;border-radius:3px}ul{padding-left:21px}li{padding-left:3px;margin:7px 0}
 .muted{color:var(--muted);font-size:12px}.notice strong{color:var(--fg)}
 .page-footer{padding:24px 0 38px;color:var(--muted);font-size:11px;border-top:0}.page-footer p{font-size:11px;color:var(--muted)}.page-footer a{text-decoration:underline;text-underline-offset:3px}
-@media(max-width:600px){.site-header{padding:0 15px}.wrap{width:calc(100% - 30px)}.hero{padding-top:52px}.legal-nav{gap:7px}.legal-nav a{padding:9px 10px;font-size:9px}section{padding:32px 0}p,li{font-size:13px}}
+@media(max-width:600px){.site-header{padding:0 15px}.wrap{width:calc(100% - 30px)}.hero{padding-top:52px}.legal-nav{gap:7px}.legal-nav a{padding:9px 10px;font-size:9px}.contact-strip{align-items:flex-start;gap:12px}.contact-strip-copy{max-width:62%}.contact-cta{padding:11px 10px;gap:8px;font-size:9px}section{padding:32px 0}p,li{font-size:13px}}
 </style>
 </head>
 <body>
@@ -51,6 +57,10 @@ p,li{color:#333;font-size:14px;line-height:1.65}code{font-family:ui-monospace,SF
     <a href="#artists">Artist Listing &amp; Removal</a>
     <a href="#contact">Contact</a>
   </nav>
+  <div class="contact-strip" aria-label="General contact">
+    <p class="contact-strip-copy"><strong>Media · Partnerships · General enquiries</strong>For journalists, sponsors, partners, artists and other enquiries.</p>
+    <a class="contact-cta" href="mailto:hello@fourfive.art?subject=FIVE%20%E2%80%94%20Media%2C%20Partnerships%20%26%20General%20Enquiry" aria-label="Email FIVE about media, partnerships or a general enquiry">Contact <span aria-hidden="true">↗</span></a>
+  </div>
 </div>
 <main class="wrap">
 <section id="privacy">
