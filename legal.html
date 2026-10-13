@@ -6,45 +6,53 @@
 <meta name="robots" content="index,follow">
 <title>Legal — FIVE</title>
 <style>
-:root{color-scheme:dark;--bg:#0b0b0c;--panel:#131315;--text:#f3f1ed;--muted:#aaa7a2;--line:#333336;--accent:#d7ff64}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.7 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-header,main,footer{width:min(900px,calc(100% - 40px));margin:auto}
-header{padding:72px 0 32px;border-bottom:1px solid var(--line)}
-.kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
-h1{font-size:clamp(42px,8vw,72px);line-height:.98;letter-spacing:-.06em;margin:14px 0}
-.lead{color:var(--muted);max-width:650px}
-nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
-nav a{border:1px solid var(--line);padding:8px 12px;color:var(--text);text-decoration:none;font-size:13px}
-nav a:hover{border-color:var(--accent)}
-main{padding:10px 0 60px}
-section{padding:38px 0;border-bottom:1px solid var(--line)}
-h2{font-size:28px;letter-spacing:-.035em;line-height:1.1;margin:0 0 18px}
-h3{font-size:17px;margin:26px 0 6px}
-p,li{color:#dedbd6}
-.muted,.updated{color:var(--muted);font-size:13px}
-.notice{border:1px solid #776c38;background:#17160f;padding:14px 16px;color:#f1e8bd;margin:20px 0}
-a{color:var(--accent);overflow-wrap:anywhere}
-ul{padding-left:22px}
-footer{padding:24px 0 50px;color:var(--muted);font-size:12px}
-@media(max-width:600px){header{padding-top:46px}section{padding:28px 0}header,main,footer{width:calc(100% - 28px)}}
+:root{color-scheme:light;--bg:#f1efe9;--paper:#f7f6f2;--fg:#111;--muted:#77736c;--line:#d6d2ca;--soft:#e7e4dd;--blue:#1685ff}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:100px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;overflow-wrap:anywhere}
+.site-header{height:76px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(241,239,233,.96);backdrop-filter:blur(8px);z-index:20}
+.brand{display:inline-block;text-decoration:none;font-weight:800;letter-spacing:-.08em;font-size:34px;line-height:1}.brand-i,.brand-v{color:var(--blue)}
+.back-link{font-size:10px;letter-spacing:.13em;text-transform:uppercase;text-decoration:none;border:1px solid var(--fg);padding:11px 13px;white-space:nowrap}.back-link:hover{background:var(--fg);color:var(--bg)}
+.wrap{width:min(1120px,calc(100% - 48px));margin:0 auto}
+.hero{padding:clamp(54px,8vw,100px) 0 34px;border-bottom:1px solid var(--fg)}
+.kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(54px,9vw,100px);font-weight:800;line-height:.84;letter-spacing:-.09em;margin:20px 0 24px;max-width:900px}
+.lead{color:var(--muted);font-size:15px;line-height:1.5;max-width:620px;margin:0}
+.updated{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:25px}
+.legal-nav{display:flex;flex-wrap:wrap;gap:8px;padding:22px 0 28px;border-bottom:1px solid var(--line)}
+.legal-nav a{display:inline-block;border:1px solid var(--line);padding:10px 12px;text-decoration:none;font-size:10px;letter-spacing:.09em;text-transform:uppercase;transition:background .15s,color .15s,border-color .15s}
+.legal-nav a:hover,.legal-nav a:focus-visible{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.notice{border-left:3px solid var(--blue);background:var(--paper);padding:15px 18px;margin:24px 0 0;font-size:12px;line-height:1.5;color:#555}
+main{padding:0 0 48px}section{padding:42px 0;border-bottom:1px solid var(--line);scroll-margin-top:100px}
+h2{font-size:clamp(32px,5vw,52px);font-weight:800;letter-spacing:-.07em;line-height:.95;margin:0 0 24px}
+h3{font-size:15px;letter-spacing:-.02em;margin:28px 0 7px}
+p,li{color:#333;font-size:14px;line-height:1.65}ul{padding-left:21px}li{padding-left:3px;margin:7px 0}
+.muted{color:var(--muted);font-size:12px}.notice strong{color:var(--fg)}
+.page-footer{padding:24px 0 38px;color:var(--muted);font-size:11px;border-top:0}.page-footer p{font-size:11px;color:var(--muted)}.page-footer a{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:600px){.site-header{padding:0 15px}.wrap{width:calc(100% - 30px)}.hero{padding-top:52px}.legal-nav{gap:7px}.legal-nav a{padding:9px 10px;font-size:9px}section{padding:32px 0}p,li{font-size:13px}}
 </style>
 </head>
 <body>
-<header>
-  <div class="kicker">FIVE / Legal</div>
-  <h1>Clear terms.<br>Independent discovery.</h1>
-  <p class="lead">This page explains how FIVE operates, how information is handled, and how an artist or visitor can contact us about a listing or privacy request.</p>
-  <p class="updated">Last updated: 13 October 2026</p>
-  <nav aria-label="Legal sections">
+<header class="site-header">
+  <a class="brand" href="./" aria-label="FIVE home">F<span class="brand-i">I</span><span class="brand-v">V</span>E</a>
+  <a class="back-link" href="./">BACK TO FIVE</a>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="kicker">FIVE / Legal</div>
+    <h1>Clear terms.<br>Independent discovery.</h1>
+    <p class="lead">This page explains how FIVE operates, how information is handled, and how an artist or visitor can contact us about a listing or privacy request.</p>
+    <p class="updated">Last updated: 13 October 2026</p>
+  </div>
+  <nav class="legal-nav" aria-label="Legal sections">
     <a href="#privacy">Privacy Policy</a>
     <a href="#terms">Terms of Use</a>
-    <a href="#artists">Artist Listing & Removal</a>
+    <a href="#artists">Artist Listing &amp; Removal</a>
     <a href="#contact">Contact</a>
   </nav>
   <div class="notice"><strong>Important:</strong> This page describes the service based on the information currently available. Some technical details, including cookie/storage behavior and retention periods, still need to be verified against the live deployment.</div>
-</header>
-<main>
+</div>
+<main class="wrap">
 <section id="privacy">
   <h2>1. Privacy Policy</h2>
   <p>FIVE is an independent artist-discovery project. This policy describes information processed through the FIVE website and its related features.</p>
@@ -133,7 +141,7 @@ footer{padding:24px 0 50px;color:var(--muted);font-size:12px}
   <p class="muted">For requests about personal information or artist listings, email the address above. The website's technical settings and retention periods should be reviewed periodically.</p>
 </section>
 </main>
-<footer>
+<footer class="page-footer wrap">
   <p>FIVE is an independent artist-discovery project. This page is general information about the service and is not a substitute for legal advice.</p>
   <p><a href="#privacy">Privacy Policy</a> · <a href="#terms">Terms of Use</a> · <a href="#artists">Artist Listing & Removal</a> · <a href="#contact">Contact</a></p>
 </footer>
