@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fourfive.art/sitemap.xml
