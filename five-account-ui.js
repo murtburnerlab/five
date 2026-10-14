@@ -135,7 +135,11 @@
   }
   document.getElementById("fiveAchievementClose").addEventListener("click",()=>{achievementModal.hidden=true;});
   achievementModal.addEventListener("click",event=>{if(event.target===achievementModal)achievementModal.hidden=true;});
-  function renderUnlocks(total,userId,allowPopup=false) {
+  // Last server-confirmed count for this browser session. Login/refresh is a
+  // silent baseline sync; it must never replay an old achievement popup.
+  const lastConfirmedTotals = new Map();
+
+  function renderUnlocks(total,userId,allowPopup=false,previousTotal=null) {
     const milestones=[
       {count:10,title:"YOUR EYE",note:"Unlock your personal choice-history summary and see which artists you choose most often."},
       {count:25,title:"EXPLORER SIGNAL",note:"Unlock your discovery-breadth percentage in YOUR EYE."},
@@ -152,24 +156,18 @@
     status.textContent=achieved.length?`Unlocked: ${achieved[achieved.length-1].title}`:"No milestones unlocked yet";
     if(!next){
       label.textContent="All milestones reached";note.textContent="You have reached all currently defined milestones.";progress.style.width="100%";
-      if(userId){
-        const seenKey=`five-achievements-seen:${userId}`;let seen=[];
-        try{seen=JSON.parse(localStorage.getItem(seenKey)||"[]");}catch(_){}
-        const fresh=fiveMilestones.filter(item=>total>=item.count).find(item=>!seen.includes(item.count));
-        if(fresh && allowPopup){seen.push(fresh.count);try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}showAchievement(fresh);}
-      }
-      return;
+    } else {
+      const previous=achieved.length?achieved[achieved.length-1].count:0;
+      const percent=Math.max(0,Math.min(100,((total-previous)/(next.count-previous))*100));
+      label.textContent=`${next.count} calls → ${next.title}`;
+      note.textContent=`${next.count-total} more call${next.count-total===1?"":"s"} to unlock: ${next.note}`;
+      progress.style.width=`${percent}%`;
     }
-    const previous=achieved.length?achieved[achieved.length-1].count:0;
-    const percent=Math.max(0,Math.min(100,((total-previous)/(next.count-previous))*100));
-    label.textContent=`${next.count} calls → ${next.title}`;
-    note.textContent=`${next.count-total} more call${next.count-total===1?"":"s"} to unlock: ${next.note}`;
-    progress.style.width=`${percent}%`;
-    if(userId){
-      const unlocked=fiveMilestones.filter(item=>total>=item.count),seenKey=`five-achievements-seen:${userId}`;let seen=[];
-      try{seen=JSON.parse(localStorage.getItem(seenKey)||"[]");}catch(_){}
-      const fresh=unlocked.find(item=>!seen.includes(item.count));
-      if(fresh && allowPopup){seen.push(fresh.count);try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}showAchievement(fresh);}
+    // A popup is allowed only for a confirmed successful-call event which
+    // crosses a threshold. No localStorage history is used to infer new levels.
+    if(allowPopup && userId && Number.isFinite(previousTotal) && total>previousTotal){
+      const newlyReached=milestones.filter(item=>previousTotal<item.count && total>=item.count);
+      if(newlyReached.length) showAchievement(newlyReached[0]);
     }
   }
 
@@ -184,7 +182,7 @@
     const oldSignOut=document.getElementById("signOutButton");if(oldSignOut)oldSignOut.classList.add("hidden");
   }
 
-  async function refreshStats(userId,allowPopup=false) {
+  async function refreshStats(userId,allowPopup=false,previousTotal=null) {
     const {data,error}=await client.from("calls").select("id,created_at,mode").eq("user_id",userId).order("created_at",{ascending:false}).limit(1000);
     if(error){say("Could not load your call history: "+error.message);document.getElementById("homeCalls").textContent="—";document.getElementById("fiveCallsToday").textContent="— / 10";return;}
     const {count: exactTotal, error: countError}=await client.from("calls").select("id",{count:"exact",head:true}).eq("user_id",userId).or("mode.is.null,mode.eq.play");
@@ -195,7 +193,10 @@
     document.getElementById("homeCalls").textContent=String(total);document.getElementById("fiveCallsToday").textContent=`${Math.min(todayCount,10)} / 10`;
     const dailyNote=document.getElementById("fiveDailyNote");
     if(dailyNote){dailyNote.classList.toggle("warning",todayCount>=10);dailyNote.textContent=todayCount>=10?"Daily limit reached. You can make more PLAY calls tomorrow.":`${10-todayCount} PLAY call${todayCount===9?"":"s"} remaining today.`;}
-    renderUnlocks(total,userId,allowPopup);
+    const baseline=previousTotal!==null?previousTotal:lastConfirmedTotals.get(userId);
+    renderUnlocks(total,userId,allowPopup,baseline??null);
+    // A normal login/account refresh silently records the current server total.
+    lastConfirmedTotals.set(userId,total);
   }
 
   async function refresh() {
@@ -207,7 +208,7 @@
     signOutBtn.disabled=true;signOutBtn.textContent="SIGNING OUT…";say("");
     const {error}=await client.auth.signOut();
     if(error){say(error.message||"Could not sign out. Please try again.");signOutBtn.disabled=false;signOutBtn.textContent="SIGN OUT";return;}
-    render(null);signOutBtn.disabled=false;signOutBtn.textContent="SIGN OUT";if(typeof window.home==="function")window.home();
+    lastConfirmedTotals.clear();render(null);signOutBtn.disabled=false;signOutBtn.textContent="SIGN OUT";if(typeof window.home==="function")window.home();
   });
 
   const modalInput=document.getElementById("fiveDeleteInput"),modalError=document.getElementById("fiveDeleteError"),modalStep=document.getElementById("fiveDeleteStep"),modalIntro=document.getElementById("fiveDeleteIntro"),modalTitle=document.getElementById("fiveDeleteTitle"),modalContinue=document.getElementById("fiveDeleteContinue"),modalCancel=document.getElementById("fiveDeleteCancel");
@@ -225,7 +226,14 @@
   deleteBtn.addEventListener("click",openDeleteModal);
 
   client.auth.onAuthStateChange((_event,session)=>{render(session);if(session?.user)setTimeout(()=>refreshStats(session.user.id),0);});
-  window.addEventListener("five:call-recorded",async()=>{const {data}=await client.auth.getSession();if(data.session?.user)await refreshStats(data.session.user.id,true);});
+  window.addEventListener("five:call-recorded",async()=>{
+    const {data}=await client.auth.getSession();
+    const userId=data.session?.user?.id;
+    if(userId){
+      const previousTotal=lastConfirmedTotals.get(userId);
+      await refreshStats(userId,true,previousTotal??null);
+    }
+  });
   const observer=new MutationObserver(()=>{if(!authSection.classList.contains("hidden"))refresh();});
   observer.observe(authSection,{attributes:true,attributeFilter:["class"]});
   refresh();
